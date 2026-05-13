@@ -10,6 +10,7 @@ let package = Package(
             path: "Sources/ClipboardManager",
             linkerSettings: [
                 .linkedFramework("Carbon"),
+                .linkedFramework("ServiceManagement"),
             ]
         )
     ]

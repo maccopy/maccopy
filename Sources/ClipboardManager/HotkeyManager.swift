@@ -4,8 +4,10 @@ final class HotkeyManager {
     private var hotKeyRef: EventHotKeyRef?
     private var handler: EventHandlerRef?
     private let callback: () -> Void
+    private let combo: KeyCombo
 
-    init(callback: @escaping () -> Void) {
+    init(combo: KeyCombo, callback: @escaping () -> Void) {
+        self.combo = combo
         self.callback = callback
     }
 
@@ -28,10 +30,10 @@ final class HotkeyManager {
             1, &spec, selfPtr, &handler
         )
 
-        let keyID = EventHotKeyID(signature: OSType(0x636C6970), id: 1) // 'clip'
+        let keyID = EventHotKeyID(signature: OSType(0x636C6970), id: 1)
         RegisterEventHotKey(
-            UInt32(kVK_ANSI_V),
-            UInt32(cmdKey | shiftKey),
+            combo.keyCode,
+            combo.modifiers,
             keyID,
             GetApplicationEventTarget(),
             0,

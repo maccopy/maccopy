@@ -2,12 +2,15 @@ import AppKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    static weak var shared: AppDelegate?
+
     private var statusItem: NSStatusItem!
     private let popover = PopoverController()
     private let monitor = ClipboardMonitor()
     private var hotkey: HotkeyManager!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppDelegate.shared = self
         setupStatusItem()
 
         popover.setup { [weak self] entry in
@@ -16,15 +19,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         monitor.start()
 
-        hotkey = HotkeyManager { [weak self] in self?.togglePopover() }
+        let combo = PreferencesManager.shared.hotkey
+        hotkey = HotkeyManager(combo: combo) { [weak self] in self?.togglePopover() }
         hotkey.register()
+
+        // Register with TCC on every launch so the app appears in Privacy panes.
+        // These calls are safe to repeat — they only prompt once per permission state.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Accessibility: needed for CGEvent paste simulation
+            if !PermissionRequester.accessibilityGranted {
+                PermissionRequester.requestAccessibility()
+            }
+            // Input Monitoring: needed for global hotkey
+            if !PermissionRequester.inputMonitoringGranted {
+                PermissionRequester.requestInputMonitoring()
+            }
+        }
+
+        if !PreferencesManager.shared.hasCompletedSetup {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                SetupWizardWindowController.show()
+            }
+        }
     }
 
-    // ── Status bar ────────────────────────────────────────────────────────────
+    // MARK: - Status Bar
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-
         guard let button = statusItem.button else { return }
         let img = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "Clipboard Manager")
         img?.isTemplate = true
@@ -45,25 +67,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showContextMenu(_ button: NSStatusBarButton) {
         let menu = NSMenu()
-        let open = NSMenuItem(title: "Open History   ⌘⇧V", action: #selector(togglePopover), keyEquivalent: "")
+
+        let hotDisplay = PreferencesManager.shared.hotkey.displayString
+        let open = NSMenuItem(title: "Open History  (\(hotDisplay))", action: #selector(togglePopover), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
         menu.addItem(.separator())
 
-        let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistory), keyEquivalent: "")
+        let prefsItem = NSMenuItem(title: "Preferences…", action: #selector(openPreferencesAction), keyEquivalent: ",")
+        prefsItem.keyEquivalentModifierMask = .command
+        prefsItem.target = self
+        menu.addItem(prefsItem)
+
+        let wizardItem = NSMenuItem(title: "Setup Wizard…", action: #selector(openWizardAction), keyEquivalent: "")
+        wizardItem.target = self
+        menu.addItem(wizardItem)
+        menu.addItem(.separator())
+
+        let clear = NSMenuItem(title: "Clear History", action: #selector(clearHistoryAction), keyEquivalent: "")
         clear.target = self
         menu.addItem(clear)
         menu.addItem(.separator())
 
         menu.addItem(NSMenuItem(title: "Quit Clipboard Manager", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
-        // Attach temporarily so NSStatusItem positions it correctly
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
     }
 
-    // ── Actions ───────────────────────────────────────────────────────────────
+    // MARK: - Actions
 
     @objc func togglePopover() {
         guard let button = statusItem.button else { return }
@@ -75,29 +108,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func clearHistory() {
+    @objc private func openPreferencesAction() { openPreferences() }
+
+    func openPreferences() {
+        popover.close()
+        PreferencesWindowController.show()
+    }
+
+    @objc private func openWizardAction() {
+        popover.close()
+        SetupWizardWindowController.show()
+    }
+
+    @objc private func clearHistoryAction() {
         ClipboardStore.shared.clear()
     }
 
-    // ── Paste ─────────────────────────────────────────────────────────────────
+    // MARK: - Paste
 
     private func performPaste(_ entry: ClipboardEntry) {
-        // Write to clipboard
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.setString(entry.text, forType: .string)
 
-        // Close popover first so previous app can regain focus
+        switch entry.type {
+        case .text:
+            if let text = entry.text { pb.setString(text, forType: .string) }
+        case .image:
+            if let image = ClipboardStore.shared.loadImage(for: entry) {
+                pb.writeObjects([image])
+            }
+        case .file:
+            if let url = entry.fileURL { pb.writeObjects([url as NSURL]) }
+        }
+
         popover.close()
 
-        // Simulate Cmd+V after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             guard
                 let src = CGEventSource(stateID: .hidSystemState),
                 let down = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: true),
                 let up = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: false)
             else { return }
-
             down.flags = .maskCommand
             up.flags = .maskCommand
             down.post(tap: .cghidEventTap)

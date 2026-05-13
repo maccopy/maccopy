@@ -22,7 +22,31 @@ final class ClipboardMonitor {
         guard pb.changeCount != lastChangeCount else { return }
         lastChangeCount = pb.changeCount
 
-        guard let text = pb.string(forType: .string) else { return }
-        Task { @MainActor in ClipboardStore.shared.add(text) }
+        Task { @MainActor in
+            let store = ClipboardStore.shared
+
+            // File URLs take priority
+            if let urls = pb.readObjects(
+                forClasses: [NSURL.self],
+                options: [.urlReadingFileURLsOnly: true]
+            ) as? [URL], !urls.isEmpty {
+                for url in urls { store.addFile(url) }
+                return
+            }
+
+            // Images next
+            if let image = NSImage(pasteboard: pb) {
+                // Only capture if no string representation (avoid capturing icons from file copy)
+                if pb.string(forType: .string) == nil {
+                    store.addImage(image)
+                    return
+                }
+            }
+
+            // Fall through to text
+            if let text = pb.string(forType: .string) {
+                store.addText(text)
+            }
+        }
     }
 }

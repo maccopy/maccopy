@@ -1,18 +1,6 @@
 import AppKit
 import Foundation
 
-struct ClipboardEntry: Identifiable, Codable, Equatable {
-    let id: UUID
-    let text: String
-    let date: Date
-
-    init(text: String) {
-        self.id = UUID()
-        self.text = text
-        self.date = Date()
-    }
-}
-
 @MainActor
 final class ClipboardStore: ObservableObject {
     static let shared = ClipboardStore()
@@ -21,46 +9,114 @@ final class ClipboardStore: ObservableObject {
     @Published var searchQuery: String = ""
 
     var filtered: [ClipboardEntry] {
-        guard !searchQuery.isEmpty else { return entries }
-        return entries.filter { $0.text.localizedCaseInsensitiveContains(searchQuery) }
+        let sorted = pinnedFirst(entries)
+        guard !searchQuery.isEmpty else { return sorted }
+        return sorted.filter { $0.searchableText.localizedCaseInsensitiveContains(searchQuery) }
     }
-
-    private let maxEntries = 50
-    private let storageURL: URL = {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = support.appendingPathComponent("ClipboardManager", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("history.json")
-    }()
 
     var onPaste: ((ClipboardEntry) -> Void)?
 
-    private init() { load() }
+    private let storageURL: URL
+    private let imagesDir: URL
+    private var maxEntries: Int { PreferencesManager.shared.maxHistory }
 
-    func add(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        guard entries.first?.text != text else { return }
-
-        entries.insert(ClipboardEntry(text: text), at: 0)
-        if entries.count > maxEntries {
-            entries = Array(entries.prefix(maxEntries))
-        }
-        save()
+    private init() {
+        let support = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = support.appendingPathComponent("ClipboardManager", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        storageURL = dir.appendingPathComponent("history.json")
+        imagesDir = dir.appendingPathComponent("images", isDirectory: true)
+        try? FileManager.default.createDirectory(at: imagesDir, withIntermediateDirectories: true)
+        load()
     }
+
+    // MARK: - Add
+
+    func addText(_ content: String) {
+        guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let topUnpinned = entries.first { !$0.isPinned }
+        guard topUnpinned?.text != content else { return }
+        entries.removeAll { $0.type == .text && $0.text == content && !$0.isPinned }
+        insert(.makeText(content))
+    }
+
+    func addImage(_ image: NSImage) {
+        guard let thumb = image.resized(maxDimension: 500),
+            let png = thumb.pngData
+        else { return }
+        let fileName = "\(UUID().uuidString).png"
+        try? png.write(to: imagesDir.appendingPathComponent(fileName))
+        insert(.makeImage(fileName: fileName))
+    }
+
+    func addFile(_ url: URL) {
+        guard
+            entries.first(where: { $0.type == .file && $0.fileURLString == url.absoluteString })
+                == nil
+        else { return }
+        insert(.makeFile(url: url))
+    }
+
+    private func insert(_ entry: ClipboardEntry) {
+        entries.insert(entry, at: 0)
+        trimUnpinned()
+        save()
+        syncToiCloud()
+    }
+
+    private func trimUnpinned() {
+        var unpinned = entries.filter { !$0.isPinned }
+        while unpinned.count > maxEntries {
+            let victim = unpinned.removeLast()
+            if victim.type == .image, let fn = victim.imageFileName {
+                try? FileManager.default.removeItem(at: imagesDir.appendingPathComponent(fn))
+            }
+            entries.removeAll { $0.id == victim.id }
+        }
+    }
+
+    // MARK: - Actions
 
     func paste(_ entry: ClipboardEntry) {
         onPaste?(entry)
     }
 
-    func clear() {
-        entries.removeAll()
+    func togglePin(_ entry: ClipboardEntry) {
+        guard let idx = entries.firstIndex(where: { $0.id == entry.id }) else { return }
+        entries[idx].isPinned.toggle()
         save()
     }
 
     func delete(_ entry: ClipboardEntry) {
+        if entry.type == .image, let fn = entry.imageFileName {
+            try? FileManager.default.removeItem(at: imagesDir.appendingPathComponent(fn))
+        }
         entries.removeAll { $0.id == entry.id }
         save()
+        syncToiCloud()
     }
+
+    func clear() {
+        let pinned = entries.filter { $0.isPinned }
+        for e in entries.filter({ !$0.isPinned }) {
+            if e.type == .image, let fn = e.imageFileName {
+                try? FileManager.default.removeItem(at: imagesDir.appendingPathComponent(fn))
+            }
+        }
+        entries = pinned
+        save()
+        syncToiCloud()
+    }
+
+    // MARK: - Image loading
+
+    func loadImage(for entry: ClipboardEntry) -> NSImage? {
+        guard entry.type == .image, let fn = entry.imageFileName else { return nil }
+        return NSImage(contentsOf: imagesDir.appendingPathComponent(fn))
+    }
+
+    // MARK: - Persistence
 
     private func save() {
         guard let data = try? JSONEncoder().encode(entries) else { return }
@@ -68,10 +124,30 @@ final class ClipboardStore: ObservableObject {
     }
 
     private func load() {
-        guard
-            let data = try? Data(contentsOf: storageURL),
+        guard let data = try? Data(contentsOf: storageURL),
             let decoded = try? JSONDecoder().decode([ClipboardEntry].self, from: data)
         else { return }
         entries = decoded
+    }
+
+    // MARK: - iCloud Drive sync (no entitlements required)
+
+    private func syncToiCloud() {
+        guard PreferencesManager.shared.iCloudSyncEnabled else { return }
+        let iCloudRoot = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+        guard FileManager.default.fileExists(atPath: iCloudRoot.path) else { return }
+        let syncDir = iCloudRoot.appendingPathComponent("ClipboardManager")
+        try? FileManager.default.createDirectory(at: syncDir, withIntermediateDirectories: true)
+        let syncable = entries.filter { $0.type == .text }
+        if let data = try? JSONEncoder().encode(syncable) {
+            try? data.write(to: syncDir.appendingPathComponent("history.json"))
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func pinnedFirst(_ list: [ClipboardEntry]) -> [ClipboardEntry] {
+        list.filter { $0.isPinned } + list.filter { !$0.isPinned }
     }
 }
