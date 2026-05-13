@@ -8,18 +8,15 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
 ## Install
 
-### Option A — Download DMG (recommended, no Xcode needed)
+### Option A — Installer package (recommended, no Xcode needed)
 
 1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
-2. Download `ClipboardManager-x.x.x.dmg`
-3. Open the DMG
+2. Download `ClipboardManager-x.x.x.pkg` **or** the `.dmg` (contains the same `.pkg` inside)
+3. Double-click the `.pkg` → follow the installer wizard → done
 
-**Then choose one:**
+The installer handles everything: copies the app to `/Applications`, removes the Gatekeeper quarantine flag, and opens the Setup Wizard automatically.
 
-| Method | Steps |
-| --- | --- |
-| **Install.command** *(easiest)* | Double-click `Install.command` inside the DMG — copies to `/Applications` and handles Gatekeeper automatically |
-| **Drag & drop** | Drag **ClipboardManager** → **Applications**, then right-click the app → **Open** → **Open** to bypass Gatekeeper (once only) |
+> **macOS may warn** "Apple cannot verify the developer." To proceed: open **System Settings → Privacy & Security**, scroll down, and click **"Open Anyway"** next to ClipboardManager. This is a one-time step for unsigned apps.
 
 ---
 
@@ -36,7 +33,7 @@ The installer automatically tries to download a pre-built binary from the latest
 ## Features
 
 | | Feature | Details |
-|---|---|---|
+| --- | --- | --- |
 | 📋 | **Clipboard history** | Text, images, and files — up to 1000 items |
 | 🖼 | **Image thumbnails** | Inline previews for copied images |
 | 📁 | **File tracking** | File name + size for copied files |
@@ -54,7 +51,7 @@ The installer automatically tries to download a pre-built binary from the latest
 ## Usage
 
 | Action | How |
-|---|---|
+| --- | --- |
 | Open history | **⌘⇧V** from any app, or click the menu bar icon |
 | Navigate list | **↑ / ↓** arrow keys |
 | Paste item | **Enter** (selected) or **double-click** any row |
@@ -72,7 +69,7 @@ The installer automatically tries to download a pre-built binary from the latest
 Two are needed for full functionality. The Setup Wizard requests both on first launch.
 
 | Permission | Used for |
-|---|---|
+| --- | --- |
 | **Accessibility** | Simulate ⌘V to paste into the active app |
 | **Input Monitoring** | Detect the global hotkey ⌘⇧V |
 
@@ -130,7 +127,7 @@ bash Scripts/make_dmg.sh
 
 ## Project structure
 
-```
+```text
 clipboard-manager/
 ├── Package.swift
 ├── Sources/ClipboardManager/
@@ -163,7 +160,7 @@ clipboard-manager/
 
 ## How it works
 
-```
+```text
 NSPasteboard  (polled every 500 ms)
       │
 ClipboardMonitor.poll()

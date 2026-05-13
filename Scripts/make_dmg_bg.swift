@@ -1,15 +1,14 @@
 #!/usr/bin/env swift
-// Generates the DMG background image: gradient + arrow + install instructions.
-// Usage: swift Scripts/make_dmg_bg.swift <output.png>
+// Generates DMG background: pkg-focused layout with gradient + instructions.
+// Usage: swift Scripts/make_dmg_bg.swift <output.png> [width] [height]
 import CoreGraphics
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
 let outputPath = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "/tmp/dmg_bg.png"
-
-let W: CGFloat = 660
-let H: CGFloat = 400
+let W: CGFloat = CommandLine.arguments.count > 2 ? CGFloat(Double(CommandLine.arguments[2]) ?? 540) : 540
+let H: CGFloat = CommandLine.arguments.count > 3 ? CGFloat(Double(CommandLine.arguments[3]) ?? 360) : 360
 
 let cs = CGColorSpaceCreateDeviceRGB()
 guard let ctx = CGContext(
@@ -20,82 +19,103 @@ guard let ctx = CGContext(
 
 // ── Background gradient ───────────────────────────────────────────────────────
 let gradColors = [
-    CGColor(colorSpace: cs, components: [0.10, 0.10, 0.14, 1.0])!,
-    CGColor(colorSpace: cs, components: [0.14, 0.14, 0.20, 1.0])!,
+    CGColor(colorSpace: cs, components: [0.09, 0.09, 0.13, 1.0])!,
+    CGColor(colorSpace: cs, components: [0.13, 0.13, 0.19, 1.0])!,
 ]
-let locs: [CGFloat] = [0, 1]
-let grad = CGGradient(colorsSpace: cs, colors: gradColors as CFArray, locations: locs)!
-ctx.drawLinearGradient(grad,
-    start: CGPoint(x: 0, y: H),
-    end: CGPoint(x: W, y: 0),
-    options: [])
+let grad = CGGradient(colorsSpace: cs, colors: gradColors as CFArray, locations: [0, 1] as [CGFloat])!
+ctx.drawLinearGradient(grad, start: CGPoint(x: 0, y: H), end: CGPoint(x: W, y: 0), options: [])
 
-// ── Subtle grid dots ──────────────────────────────────────────────────────────
-ctx.setFillColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.04])!)
-let spacing: CGFloat = 28
-var x: CGFloat = spacing
-while x < W {
-    var y: CGFloat = spacing
-    while y < H {
-        ctx.fillEllipse(in: CGRect(x: x - 1, y: y - 1, width: 2, height: 2))
-        y += spacing
+// ── Dot grid ─────────────────────────────────────────────────────────────────
+ctx.setFillColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.035])!)
+let spacing: CGFloat = 24
+var gx: CGFloat = spacing
+while gx < W {
+    var gy: CGFloat = spacing
+    while gy < H {
+        ctx.fillEllipse(in: CGRect(x: gx - 1, y: gy - 1, width: 2, height: 2))
+        gy += spacing
     }
-    x += spacing
+    gx += spacing
 }
 
-// ── Arrow between icons ───────────────────────────────────────────────────────
-// Icon positions (match osascript below): app at 165,185 — Applications at 495,185
-// Arrow from ~230,185 → ~430,185
-let arrowY: CGFloat = H - 185  // flip Y (CoreGraphics origin = bottom-left)
-let ax1: CGFloat = 240, ax2: CGFloat = 420
-
-ctx.setStrokeColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.18])!)
-ctx.setLineWidth(2)
-ctx.setLineCap(.round)
-
-// shaft
-ctx.move(to: CGPoint(x: ax1, y: arrowY))
-ctx.addLine(to: CGPoint(x: ax2 - 14, y: arrowY))
-ctx.strokePath()
-
-// arrowhead
-ctx.setFillColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.18])!)
-ctx.move(to: CGPoint(x: ax2, y: arrowY))
-ctx.addLine(to: CGPoint(x: ax2 - 14, y: arrowY + 8))
-ctx.addLine(to: CGPoint(x: ax2 - 14, y: arrowY - 8))
-ctx.fillPath()
-
-// ── Helper: draw centered text ────────────────────────────────────────────────
-func drawText(_ text: String, x: CGFloat, y: CGFloat,
-              size: CGFloat, alpha: CGFloat, weight: Bool = false) {
-    let font = CTFontCreateWithName((weight ? "Helvetica-Bold" : "Helvetica") as CFString, size, nil)
+// ── Helper: draw horizontally centered text ───────────────────────────────────
+func drawText(_ text: String, cx: CGFloat, cy: CGFloat,
+              size: CGFloat, alpha: CGFloat, bold: Bool = false) {
+    let fontName = bold ? "Helvetica-Bold" : "Helvetica" as CFString
+    let font = CTFontCreateWithName(fontName as CFString, size, nil)
     let attrs: [CFString: Any] = [
         kCTFontAttributeName: font,
-        kCTForegroundColorAttributeName: CGColor(colorSpace: cs,
-            components: [1, 1, 1, alpha])!,
+        kCTForegroundColorAttributeName: CGColor(colorSpace: cs, components: [1, 1, 1, alpha])!,
     ]
-    let str = CFAttributedStringCreate(nil, text as CFString, attrs as CFDictionary)!
-    let line = CTLineCreateWithAttributedString(str)
-    let bounds = CTLineGetBoundsWithOptions(line, [])
-    ctx.textPosition = CGPoint(x: x - bounds.width / 2, y: H - y - bounds.height / 2)
+    let line = CTLineCreateWithAttributedString(
+        CFAttributedStringCreate(nil, text as CFString, attrs as CFDictionary)!)
+    let b = CTLineGetBoundsWithOptions(line, [])
+    ctx.textPosition = CGPoint(x: cx - b.width / 2, y: H - cy - b.height / 2)
     CTLineDraw(line, ctx)
 }
 
-// ── Labels ────────────────────────────────────────────────────────────────────
-// "Clipboard Manager" title
-drawText("Clipboard Manager", x: W / 2, y: 52, size: 22, alpha: 0.85, weight: true)
-drawText("Drag to Applications to install", x: W / 2, y: 84, size: 13, alpha: 0.45)
-
-// icon sub-labels (match positions)
-drawText("ClipboardManager", x: 165, y: 248, size: 11, alpha: 0.35)
-drawText("Applications", x: 495, y: 248, size: 11, alpha: 0.35)
-
-// ── Thin top border line ──────────────────────────────────────────────────────
-ctx.setStrokeColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.08])!)
-ctx.setLineWidth(1)
-ctx.move(to: CGPoint(x: 0, y: H - 110))
-ctx.addLine(to: CGPoint(x: W, y: H - 110))
+// ── Title area (top) ──────────────────────────────────────────────────────────
+// Subtle top separator
+ctx.setFillColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.05])!)
+ctx.fill(CGRect(x: 0, y: H - 72, width: W, height: 72))
+ctx.setStrokeColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.10])!)
+ctx.setLineWidth(0.5)
+ctx.move(to: CGPoint(x: 0, y: H - 72)); ctx.addLine(to: CGPoint(x: W, y: H - 72))
 ctx.strokePath()
+
+drawText("Clipboard Manager", cx: W / 2, cy: 28, size: 20, alpha: 0.88, bold: true)
+drawText("macOS clipboard history — menu bar app", cx: W / 2, cy: 52, size: 12, alpha: 0.40)
+
+// ── Pkg icon placeholder (rounded rect) ──────────────────────────────────────
+let pkgX: CGFloat = W / 2 - 44
+let pkgY: CGFloat = 110   // from top in "screen" coords
+let pkgW: CGFloat = 88
+let pkgH: CGFloat = 88
+
+// Shadow
+ctx.setShadow(offset: CGSize(width: 0, height: -3), blur: 12,
+    color: CGColor(colorSpace: cs, components: [0, 0, 0, 0.5])!)
+// Box (installer box look: dark blue-grey)
+let pkgRect = CGRect(x: pkgX, y: H - pkgY - pkgH, width: pkgW, height: pkgH)
+let pkgPath = CGPath(roundedRect: pkgRect, cornerWidth: 16, cornerHeight: 16, transform: nil)
+let pkgFill = CGGradient(colorsSpace: cs, colors: [
+    CGColor(colorSpace: cs, components: [0.25, 0.45, 0.85, 1.0])!,
+    CGColor(colorSpace: cs, components: [0.15, 0.30, 0.65, 1.0])!,
+] as CFArray, locations: [0, 1] as [CGFloat])!
+ctx.saveGState()
+ctx.addPath(pkgPath); ctx.clip()
+ctx.drawLinearGradient(pkgFill,
+    start: CGPoint(x: pkgX, y: H - pkgY),
+    end: CGPoint(x: pkgX, y: H - pkgY - pkgH), options: [])
+ctx.restoreGState()
+ctx.setShadow(offset: .zero, blur: 0, color: nil)
+
+// "PKG" label on icon
+drawText("PKG", cx: W / 2, cy: pkgY + 30, size: 16, alpha: 0.90, bold: true)
+// Clipboard icon lines (decorative)
+ctx.setStrokeColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.35])!)
+ctx.setLineWidth(1.5)
+let lx = W / 2 - 14
+let ly0 = H - pkgY - 58
+for i in 0..<3 {
+    let y = ly0 - CGFloat(i) * 8
+    ctx.move(to: CGPoint(x: lx, y: y))
+    ctx.addLine(to: CGPoint(x: lx + 28, y: y))
+    ctx.strokePath()
+}
+
+// ── Install instruction ───────────────────────────────────────────────────────
+drawText("Double-click to install", cx: W / 2, cy: pkgY + pkgH + 22, size: 13, alpha: 0.75, bold: true)
+drawText("Installs to /Applications automatically", cx: W / 2, cy: pkgY + pkgH + 42, size: 11, alpha: 0.35)
+
+// ── Bottom hint ───────────────────────────────────────────────────────────────
+ctx.setFillColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.03])!)
+ctx.fill(CGRect(x: 0, y: 0, width: W, height: 40))
+ctx.setStrokeColor(CGColor(colorSpace: cs, components: [1, 1, 1, 0.07])!)
+ctx.setLineWidth(0.5)
+ctx.move(to: CGPoint(x: 0, y: 40)); ctx.addLine(to: CGPoint(x: W, y: 40))
+ctx.strokePath()
+drawText("Requires macOS 14 Sonoma or later", cx: W / 2, cy: H - 20, size: 10, alpha: 0.25)
 
 // ── Write PNG ─────────────────────────────────────────────────────────────────
 guard let img = ctx.makeImage() else { exit(1) }

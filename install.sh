@@ -91,9 +91,32 @@ DOWNLOADED_DMG=""
 if command -v curl &>/dev/null; then
     LATEST_JSON="$(curl -fsSL --connect-timeout 5 "$GITHUB_API" 2>/dev/null || true)"
     if [[ -n "$LATEST_JSON" ]]; then
+        # Prefer .pkg, fall back to .dmg
+        PKG_URL="$(echo "$LATEST_JSON" | grep -o '"browser_download_url": *"[^"]*\.pkg"' | head -1 | grep -o 'https://[^"]*' || true)"
         DMG_URL="$(echo "$LATEST_JSON" | grep -o '"browser_download_url": *"[^"]*\.dmg"' | head -1 | grep -o 'https://[^"]*' || true)"
         TAG="$(echo "$LATEST_JSON" | grep -o '"tag_name": *"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"' || true)"
-        if [[ -n "$DMG_URL" ]]; then
+        if [[ -n "$PKG_URL" ]]; then
+            info "Found pre-built release: ${BOLD}$TAG${RESET}"
+            TMPDIR_INST="$(mktemp -d)"
+            PKG_FILE="$TMPDIR_INST/ClipboardManager.pkg"
+            info "Downloading installer package…"
+            if curl -fsSL --progress-bar "$PKG_URL" -o "$PKG_FILE"; then
+                info "Running installer…"
+                xattr -cr "$PKG_FILE" 2>/dev/null || true
+                if sudo installer -pkg "$PKG_FILE" -target /; then
+                    ok "Installed from package ($TAG)"
+                    rm -rf "$TMPDIR_INST"
+                    # Jump to LaunchAgent setup
+                    SKIP_TO_LAUNCH_AGENT=true
+                else
+                    warn "pkg install failed — will build from source"
+                    rm -rf "$TMPDIR_INST"
+                fi
+            else
+                warn "Download failed — will build from source"
+                rm -rf "$TMPDIR_INST"
+            fi
+        elif [[ -n "$DMG_URL" ]]; then
             info "Found pre-built release: ${BOLD}$TAG${RESET}"
             TMPDIR_INST="$(mktemp -d)"
             DMG_FILE="$TMPDIR_INST/ClipboardManager.dmg"
@@ -106,7 +129,7 @@ if command -v curl &>/dev/null; then
                 rm -rf "$TMPDIR_INST"
             fi
         else
-            warn "No DMG asset in latest release — will build from source"
+            warn "No installable asset in latest release — will build from source"
         fi
     else
         warn "GitHub API unreachable — will build from source"

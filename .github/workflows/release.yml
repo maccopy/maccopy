@@ -38,7 +38,12 @@ jobs:
           bash Scripts/make_dmg.sh .
           echo "DMG: $(du -sh ClipboardManager-${{ steps.version.outputs.version }}.dmg | cut -f1)"
 
-      - name: Create ZIP (alternative download)
+      - name: Copy pkg to root for upload
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: cp .build/ClipboardManager-$VERSION.pkg ClipboardManager-$VERSION.pkg
+
+      - name: Create ZIP (app-only alternative)
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -53,5 +58,6 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
+            ClipboardManager-${{ steps.version.outputs.version }}.pkg
             ClipboardManager-${{ steps.version.outputs.version }}.dmg
             ClipboardManager-${{ steps.version.outputs.version }}.zip
