@@ -10,19 +10,15 @@ final class PopoverController {
         ClipboardStore.shared.onPaste = onPaste
 
         let hostingVC = NSHostingController(rootView: ContentView())
-        hostingVC.view.frame = NSRect(x: 0, y: 0, width: 400, height: 500)
+        hostingVC.view.frame = NSRect(x: 0, y: 0, width: 440, height: 540)
 
         popover.contentViewController = hostingVC
-        popover.contentSize = NSSize(width: 400, height: 500)
+        popover.contentSize = NSSize(width: 440, height: 540)
         popover.behavior = .applicationDefined
         popover.animates = true
     }
 
     var isShown: Bool { popover.isShown }
-
-    func toggle(relativeTo button: NSStatusBarButton) {
-        isShown ? close() : show(relativeTo: button)
-    }
 
     func show(relativeTo button: NSStatusBarButton) {
         ClipboardStore.shared.searchQuery = ""
