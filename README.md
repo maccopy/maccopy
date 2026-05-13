@@ -1,75 +1,46 @@
 # Clipboard Manager
 
-Native macOS clipboard history manager — POC/MVP inspired by [Maccy](https://maccy.app/).
+Native macOS clipboard history — text, images, and files. Lives in the menu bar. Zero dependencies.
 
-Built with **Swift + AppKit + SwiftUI**. Runs as a menu bar app with no Dock icon.
+Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
+
+---
+
+## Install — one command
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash
+```
+
+That's it. The installer will:
+
+1. Clone the repo to a temp directory
+2. Check Swift / macOS version
+3. Build a release binary
+4. Generate the app icon (`AppIcon.icns`)
+5. Package `ClipboardManager.app` → `~/Applications/`
+6. Ad-hoc code-sign the bundle
+7. Install a LaunchAgent (auto-starts at login)
+8. Trigger Accessibility + Input Monitoring permission dialogs
+9. Launch the app
+10. Clean up the temp clone
 
 ---
 
 ## Features
 
-| Feature | Details |
-|---|---|
-| Clipboard history | Up to 50 text items |
-| Persistent storage | JSON at `~/Library/Application Support/ClipboardManager/history.json` |
-| Global hotkey | **⌘ Shift V** |
-| Live search | Filter by typing — updates instantly |
-| Paste | Double-click any row → sets clipboard + fires ⌘V into the focused app |
-| Delete | Hover a row → trash icon removes that entry |
-| Menu bar icon | `doc.on.clipboard.fill` SF Symbol |
-| Right-click menu | Open / Clear History / Quit |
-
----
-
-## Requirements
-
-- macOS 14 (Sonoma) or later
-- Xcode Command Line Tools (`xcode-select --install`)
-
----
-
-## Install (one command)
-
-```bash
-bash install.sh
-```
-
-`install.sh`:
-1. Builds release binary via `swift build`
-2. Packages `ClipboardManager.app` into `~/Applications/`
-3. Installs a LaunchAgent → auto-starts at login
-4. Opens System Settings for the two required permissions
-5. Launches the app
-
-Permissions attach to the `.app` bundle, not the terminal.
-
-**Uninstall:**
-```bash
-bash uninstall.sh
-```
-
----
-
-## Manual run (dev/testing)
-
-```bash
-./run.sh
-```
-
-Builds and launches the raw binary (no `.app`, permissions attach to terminal).
-
----
-
-## First-Run Permissions
-
-Two permissions required — `install.sh` opens System Settings automatically:
-
-| Permission | Path | Needed for |
+| | Feature | Details |
 |---|---|---|
-| **Accessibility** | System Settings → Privacy & Security → Accessibility | Simulating ⌘V keystroke to paste |
-| **Input Monitoring** | System Settings → Privacy & Security → Input Monitoring | Global hotkey (⌘⇧V) detection |
-
-Add `~/Applications/ClipboardManager.app` to both lists.
+| 📋 | **Text history** | Up to 50 items (configurable 10–500) |
+| 🖼 | **Image support** | Captures images from clipboard, shows thumbnails |
+| 📁 | **File support** | Captures file URLs, shows name + size |
+| 📌 | **Pin / favourite** | Pin any item — stays at the top permanently |
+| ⌨️ | **Keyboard navigation** | Arrow keys to move, Enter to paste, Escape to close |
+| 🔍 | **Live search** | Instant filter across all item types |
+| ☁️ | **iCloud Drive sync** | Syncs text history across your Macs (no entitlements needed) |
+| ⚙️ | **Preferences window** | Hotkey display, history size, launch at login, iCloud toggle |
+| 🧙 | **Setup Wizard** | 5-step onboarding — walks through permissions & preferences |
+| 🎨 | **Custom icon** | Generated at install time via CoreGraphics |
 
 ---
 
@@ -77,13 +48,62 @@ Add `~/Applications/ClipboardManager.app` to both lists.
 
 | Action | How |
 |---|---|
-| Open/close history | **⌘ Shift V** from any app |
-| Open via menu bar | Click `📋` icon |
-| Paste an item | **Double-click** the row |
-| Search | Type in the search box at the top |
-| Delete one item | Hover the row → click trash icon |
-| Clear all | Footer → **Clear All** or right-click icon → Clear History |
-| Quit | Footer → **Quit** or right-click icon → Quit |
+| Open history | **⌘⇧V** from any app, or click the 📋 menu bar icon |
+| Navigate | **↑ / ↓** arrow keys; **↓** from search bar jumps to list |
+| Paste item | **Enter** (selected) or **double-click** any row |
+| Search | Type in the search box — filters all types live |
+| Pin item | Hover a row → **pin** button (orange); pinned items stay at top |
+| Delete item | Hover a row → **trash** button |
+| Clear all | Footer → **Clear**, or right-click icon → Clear History |
+| Preferences | Footer → **Preferences**, or right-click icon → Preferences… |
+| Quit | Right-click icon → Quit |
+
+---
+
+## Permissions
+
+Two are required for full functionality. The app requests both automatically on first launch.
+
+| Permission | Needed for | How to grant |
+|---|---|---|
+| **Accessibility** | Simulating ⌘V to paste into the active app | System Settings → Privacy & Security → Accessibility → add `ClipboardManager.app` |
+| **Input Monitoring** | Detecting the global hotkey ⌘⇧V | System Settings → Privacy & Security → Input Monitoring → add `ClipboardManager.app` |
+
+> The Setup Wizard (shown on first launch) has **"Request … Access"** buttons that trigger the system dialogs directly.
+
+---
+
+## Uninstall
+
+```bash
+bash uninstall.sh
+```
+
+Or from a fresh clone:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/uninstall.sh | bash
+```
+
+---
+
+## Manual / dev build
+
+```bash
+git clone https://github.com/FernandoHaeser/macos-clipboard-manager.git
+cd macos-clipboard-manager
+bash install.sh          # full install
+# or
+./run.sh                 # quick dev launch (raw binary, no .app bundle)
+```
+
+---
+
+## Requirements
+
+- macOS 14 Sonoma or later
+- Xcode Command Line Tools — install with `xcode-select --install`
+- Internet access (first install only, to clone the repo)
 
 ---
 
@@ -91,77 +111,51 @@ Add `~/Applications/ClipboardManager.app` to both lists.
 
 ```
 clipboard-manager/
-├── Package.swift                         # Swift Package Manifest (macOS 14+, links Carbon)
+├── Package.swift
 ├── Sources/ClipboardManager/
-│   ├── main.swift                        # NSApplication setup and entry point
-│   ├── AppDelegate.swift                 # Status bar, popover toggle, paste logic
-│   ├── ClipboardStore.swift              # @MainActor ObservableObject — history + JSON persistence
-│   ├── ClipboardMonitor.swift            # Timer-based NSPasteboard polling (0.5 s)
-│   ├── HotkeyManager.swift               # Carbon RegisterEventHotKey (⌘⇧V)
-│   ├── PopoverController.swift           # NSPopover lifecycle + outside-click-to-close
-│   ├── ContentView.swift                 # SwiftUI root: search bar + list + footer
-│   └── ClipboardRowView.swift            # SwiftUI row: preview text + hover actions
-├── install.sh                            # One-command installer: build → .app bundle → LaunchAgent → permissions
-├── uninstall.sh                          # Removes app, LaunchAgent, optionally history data
-├── run.sh                                # Dev runner: build + launch raw binary
-└── README.md
+│   ├── main.swift                  entry point
+│   ├── AppDelegate.swift           status bar, popover, paste, TCC permission requests
+│   ├── ClipboardEntry.swift        model — text / image / file, pin flag, Codable
+│   ├── ClipboardStore.swift        history store — add, delete, pin, trim, iCloud sync
+│   ├── ClipboardMonitor.swift      NSPasteboard polling — text, image, file URL detection
+│   ├── HotkeyManager.swift         Carbon RegisterEventHotKey — reads hotkey from prefs
+│   ├── PreferencesManager.swift    UserDefaults-backed preferences — hotkey, history, login
+│   ├── PermissionRequester.swift   AXIsProcessTrustedWithOptions + CGRequestListenEventAccess
+│   ├── PopoverController.swift     NSPopover lifecycle, outside-click to close
+│   ├── ContentView.swift           SwiftUI root — search, List with sections, keyboard nav
+│   ├── ClipboardRowView.swift      row — text preview / image thumbnail / file icon + actions
+│   ├── SetupWizardView.swift       5-step onboarding NSWindow
+│   ├── PreferencesView.swift       preferences NSWindow
+│   └── Extensions.swift            NSImage resize + PNG export
+├── Scripts/
+│   └── make_icon.swift             headless CoreGraphics icon renderer → AppIcon.icns
+├── install.sh                      installer (works via curl | bash or local bash)
+├── uninstall.sh
+└── run.sh
 ```
 
 ---
 
 ## How It Works
 
-```text
-NSPasteboard.general
-      │  polled every 500 ms via Timer
-      ▼
+```
+NSPasteboard  (polled every 500 ms)
+      │
 ClipboardMonitor.poll()
-      │  changeCount differs → read string
-      ▼
-ClipboardStore.add(_:)         @MainActor
-      │  deduplicates, prepends, trims to 50, saves JSON
-      ▼
-ContentView (SwiftUI)          @ObservedObject redraws automatically
+      ├── file URLs  → ClipboardStore.addFile(_:)
+      ├── NSImage    → ClipboardStore.addImage(_:)  saves PNG thumbnail
+      └── String     → ClipboardStore.addText(_:)
+                              │
+                        JSON + images/ saved to
+                        ~/Library/Application Support/ClipboardManager/
+                              │ (if iCloud sync on)
+                        ~/iCloud Drive/ClipboardManager/history.json
 
-──── User picks an item ────
-
-double-click row
+User picks an item → Enter / double-click
       │
 AppDelegate.performPaste(_:)
-      ├── NSPasteboard.general.setString(...)
-      ├── popover.close()
-      └── DispatchQueue.main.asyncAfter(0.15 s)
-            └── CGEvent(keyboardEventSource:, virtualKey: 0x09 'V', keyDown: true/false)
-                  flags = .maskCommand
-                  post(tap: .cghidEventTap)
+      ├── NSPasteboard.clearContents()
+      ├── write text / image / URL back to pasteboard
+      ├── popover.close()   ← previous app regains focus
+      └── 150 ms later: CGEvent(V, .maskCommand) → cghidEventTap
 ```
-
----
-
-## Architecture Notes
-
-- **No Dock icon** — `NSApp.setActivationPolicy(.accessory)` in `main.swift`
-- **Left click** status item → toggle popover; **right click** → context NSMenu
-- `PopoverController` sets `behavior = .applicationDefined` and closes on the first global mouse-down outside the popover
-- `ClipboardStore.onPaste` is a closure set by `AppDelegate` during setup — decouples SwiftUI from AppKit paste logic
-- `HotkeyManager` uses Carbon's `RegisterEventHotKey` (no Accessibility needed for the hotkey itself, only for CGEvent paste simulation)
-
----
-
-## Known Limitations (MVP)
-
-- Text only — images, files, rich text not captured
-- No configurable hotkey (hardcoded ⌘⇧V)
-- No item pinning / favourites
-- No dark/light mode accent customisation beyond system defaults
-
----
-
-## Roadmap (post-MVP)
-
-- [x] Build as proper `.app` bundle so permissions attach to the app, not the terminal (`install.sh`)
-- [ ] Image and file clipboard support
-- [ ] Preferences window (hotkey, max history, launch at login)
-- [ ] Keyboard navigation (arrow keys + Enter to paste)
-- [ ] Pin/favourite items
-- [ ] iCloud sync via CloudKit

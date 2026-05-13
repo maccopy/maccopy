@@ -3,7 +3,35 @@
 # ║          Clipboard Manager — Installer v2                    ║
 # ║  Builds, bundles, icons, signs, and launches the app.       ║
 # ╚══════════════════════════════════════════════════════════════╝
+#
+# One-liner (curl | bash):
+#   curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash
+#
+# Local clone:
+#   bash install.sh
+# ──────────────────────────────────────────────────────────────────────────────
+
 set -euo pipefail
+
+# ── Auto-bootstrap when piped via curl (no Package.swift in cwd) ─────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
+if [[ ! -f "$SCRIPT_DIR/Package.swift" ]]; then
+    REPO_URL="https://github.com/FernandoHaeser/macos-clipboard-manager.git"
+    CLONE_TMP="$(mktemp -d)"
+
+    echo "Downloading Clipboard Manager source…"
+    if ! git clone --depth=1 --quiet "$REPO_URL" "$CLONE_TMP" 2>&1; then
+        echo "ERROR: git clone failed. Make sure git is installed and you're online." >&2
+        rm -rf "$CLONE_TMP"
+        exit 1
+    fi
+
+    bash "$CLONE_TMP/install.sh"
+    STATUS=$?
+    rm -rf "$CLONE_TMP"
+    exit $STATUS
+fi
+# ─────────────────────────────────────────────────────────────────────────────
 
 APP_NAME="ClipboardManager"
 BUNDLE_ID="com.fernandohaeser.clipboardmanager"
@@ -211,9 +239,15 @@ fi
 
 # ── Step 7: Launch ────────────────────────────────────────────────────────────
 step "Step 7/7 — Launching Clipboard Manager"
+
+# Reset setup flag so the in-app Setup Wizard opens on this launch.
+# (UserDefaults persists across installs; clearing ensures wizard always runs after install.)
+defaults delete "$BUNDLE_ID" hasCompletedSetup 2>/dev/null || true
+ok "Setup Wizard will open on launch"
+
 open "$APP_BUNDLE"
-sleep 0.8
-ok "Clipboard Manager launched"
+sleep 1.2
+ok "Clipboard Manager launched — Setup Wizard should appear shortly"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo
