@@ -12,10 +12,14 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
 1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
 2. Download `ClipboardManager-x.x.x.dmg`
-3. Open the DMG → drag **ClipboardManager** to **Applications**
-4. Launch from Applications or Spotlight
+3. Open the DMG
 
-> **First launch blocked by Gatekeeper?** Right-click the app → **Open** → **Open** in the dialog. Only needed once.
+**Then choose one:**
+
+| Method | Steps |
+| --- | --- |
+| **Install.command** *(easiest)* | Double-click `Install.command` inside the DMG — copies to `/Applications` and handles Gatekeeper automatically |
+| **Drag & drop** | Drag **ClipboardManager** → **Applications**, then right-click the app → **Open** → **Open** to bypass Gatekeeper (once only) |
 
 ---
 

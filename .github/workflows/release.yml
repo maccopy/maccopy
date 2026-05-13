@@ -27,76 +27,18 @@ jobs:
       - name: Patch version in UpdateChecker.swift
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          sed -i '' "s/static let currentVersion = \".*\"/static let currentVersion = \"$VERSION\"/" \
+          sed -i '' \
+            "s/static let currentVersion = \".*\"/static let currentVersion = \"$VERSION\"/" \
             Sources/ClipboardManager/UpdateChecker.swift
 
-      - name: Build release binary
-        run: swift build -c release
-
-      - name: Create .app bundle
+      - name: Build DMG
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          BUNDLE_ID: com.fernandohaeser.clipboardmanager
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          APP="ClipboardManager.app"
-          mkdir -p ".build/bundle/$APP/Contents/MacOS"
-          mkdir -p ".build/bundle/$APP/Contents/Resources"
+          bash Scripts/make_dmg.sh .
+          echo "DMG: $(du -sh ClipboardManager-${{ steps.version.outputs.version }}.dmg | cut -f1)"
 
-          cp .build/release/ClipboardManager ".build/bundle/$APP/Contents/MacOS/ClipboardManager"
-          chmod +x ".build/bundle/$APP/Contents/MacOS/ClipboardManager"
-
-          # Generate icon
-          swift Scripts/make_icon.swift ".build/AppIcon.icns" 2>/dev/null && \
-            cp .build/AppIcon.icns ".build/bundle/$APP/Contents/Resources/AppIcon.icns" || true
-
-          cat > ".build/bundle/$APP/Contents/Info.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CFBundleIdentifier</key>    <string>$BUNDLE_ID</string>
-            <key>CFBundleName</key>          <string>ClipboardManager</string>
-            <key>CFBundleDisplayName</key>   <string>Clipboard Manager</string>
-            <key>CFBundleExecutable</key>    <string>ClipboardManager</string>
-            <key>CFBundleVersion</key>       <string>$VERSION</string>
-            <key>CFBundleShortVersionString</key> <string>$VERSION</string>
-            <key>CFBundlePackageType</key>   <string>APPL</string>
-            <key>CFBundleIconFile</key>      <string>AppIcon</string>
-            <key>LSUIElement</key>           <true/>
-            <key>NSPrincipalClass</key>      <string>NSApplication</string>
-            <key>LSMinimumSystemVersion</key> <string>14.0</string>
-            <key>NSAccessibilityUsageDescription</key>
-            <string>Needed to simulate ⌘V and paste items into other apps.</string>
-            <key>NSAppleEventsUsageDescription</key>
-            <string>Clipboard Manager uses Apple Events to paste clipboard content.</string>
-          </dict>
-          </plist>
-          PLIST
-
-          # Ad-hoc sign
-          codesign --force --deep --sign - ".build/bundle/$APP"
-
-      - name: Create DMG
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          STAGING="$(mktemp -d)/dmg_root"
-          mkdir -p "$STAGING"
-          cp -r .build/bundle/ClipboardManager.app "$STAGING/"
-          ln -s /Applications "$STAGING/Applications"
-
-          hdiutil create \
-            -volname "Clipboard Manager $VERSION" \
-            -srcfolder "$STAGING" \
-            -ov \
-            -format UDZO \
-            -imagekey zlib-level=9 \
-            "ClipboardManager-$VERSION.dmg"
-
-          echo "DMG size: $(du -sh ClipboardManager-$VERSION.dmg | cut -f1)"
-
-      - name: Create ZIP (alternative)
+      - name: Create ZIP (alternative download)
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
