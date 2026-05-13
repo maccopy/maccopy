@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build DMG & publish release
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Parse version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Patch version in UpdateChecker.swift
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i '' "s/static let currentVersion = \".*\"/static let currentVersion = \"$VERSION\"/" \
+            Sources/ClipboardManager/UpdateChecker.swift
+
+      - name: Build release binary
+        run: swift build -c release
+
+      - name: Create .app bundle
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUNDLE_ID: com.fernandohaeser.clipboardmanager
+        run: |
+          APP="ClipboardManager.app"
+          mkdir -p ".build/bundle/$APP/Contents/MacOS"
+          mkdir -p ".build/bundle/$APP/Contents/Resources"
+
+          cp .build/release/ClipboardManager ".build/bundle/$APP/Contents/MacOS/ClipboardManager"
+          chmod +x ".build/bundle/$APP/Contents/MacOS/ClipboardManager"
+
+          # Generate icon
+          swift Scripts/make_icon.swift ".build/AppIcon.icns" 2>/dev/null && \
+            cp .build/AppIcon.icns ".build/bundle/$APP/Contents/Resources/AppIcon.icns" || true
+
+          cat > ".build/bundle/$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleIdentifier</key>    <string>$BUNDLE_ID</string>
+            <key>CFBundleName</key>          <string>ClipboardManager</string>
+            <key>CFBundleDisplayName</key>   <string>Clipboard Manager</string>
+            <key>CFBundleExecutable</key>    <string>ClipboardManager</string>
+            <key>CFBundleVersion</key>       <string>$VERSION</string>
+            <key>CFBundleShortVersionString</key> <string>$VERSION</string>
+            <key>CFBundlePackageType</key>   <string>APPL</string>
+            <key>CFBundleIconFile</key>      <string>AppIcon</string>
+            <key>LSUIElement</key>           <true/>
+            <key>NSPrincipalClass</key>      <string>NSApplication</string>
+            <key>LSMinimumSystemVersion</key> <string>14.0</string>
+            <key>NSAccessibilityUsageDescription</key>
+            <string>Needed to simulate ⌘V and paste items into other apps.</string>
+            <key>NSAppleEventsUsageDescription</key>
+            <string>Clipboard Manager uses Apple Events to paste clipboard content.</string>
+          </dict>
+          </plist>
+          PLIST
+
+          # Ad-hoc sign
+          codesign --force --deep --sign - ".build/bundle/$APP"
+
+      - name: Create DMG
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          STAGING="$(mktemp -d)/dmg_root"
+          mkdir -p "$STAGING"
+          cp -r .build/bundle/ClipboardManager.app "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+
+          hdiutil create \
+            -volname "Clipboard Manager $VERSION" \
+            -srcfolder "$STAGING" \
+            -ov \
+            -format UDZO \
+            -imagekey zlib-level=9 \
+            "ClipboardManager-$VERSION.dmg"
+
+          echo "DMG size: $(du -sh ClipboardManager-$VERSION.dmg | cut -f1)"
+
+      - name: Create ZIP (alternative)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd .build/bundle
+          zip -r --symlinks "../../ClipboardManager-$VERSION.zip" ClipboardManager.app
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Clipboard Manager v${{ steps.version.outputs.version }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ClipboardManager-${{ steps.version.outputs.version }}.dmg
+            ClipboardManager-${{ steps.version.outputs.version }}.zip
