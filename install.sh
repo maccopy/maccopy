@@ -239,9 +239,15 @@ fi
 
 # ── Step 7: Launch ────────────────────────────────────────────────────────────
 step "Step 7/7 — Launching Clipboard Manager"
+
+# Reset setup flag so the in-app Setup Wizard opens on this launch.
+# (UserDefaults persists across installs; clearing ensures wizard always runs after install.)
+defaults delete "$BUNDLE_ID" hasCompletedSetup 2>/dev/null || true
+ok "Setup Wizard will open on launch"
+
 open "$APP_BUNDLE"
-sleep 0.8
-ok "Clipboard Manager launched"
+sleep 1.2
+ok "Clipboard Manager launched — Setup Wizard should appear shortly"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo
