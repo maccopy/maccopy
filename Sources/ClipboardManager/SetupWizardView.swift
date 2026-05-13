@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import CoreGraphics
 import SwiftUI
 
@@ -163,12 +164,21 @@ struct SetupWizardView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                Button("Open Accessibility Settings") {
-                    NSWorkspace.shared.open(
-                        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-                    )
+                VStack(spacing: 8) {
+                    // Primary: trigger the system prompt that registers the app with TCC
+                    Button("Request Accessibility Access") {
+                        PermissionRequester.requestAccessibility()
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    // Fallback: open settings manually (for re-enabling after denial)
+                    Button("Open System Settings") {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.bordered)
 
                 PermissionRow(check: { AXIsProcessTrusted() }, label: "Accessibility")
             }
@@ -180,12 +190,20 @@ struct SetupWizardView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                Button("Open Input Monitoring Settings") {
-                    NSWorkspace.shared.open(
-                        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!
-                    )
+                VStack(spacing: 8) {
+                    // Primary: trigger the system prompt that registers the app with TCC
+                    Button("Request Input Monitoring Access") {
+                        PermissionRequester.requestInputMonitoring()
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("Open System Settings") {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.bordered)
 
                 PermissionRow(check: { CGPreflightListenEventAccess() }, label: "Input Monitoring")
             }

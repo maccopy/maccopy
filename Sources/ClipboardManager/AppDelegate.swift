@@ -23,8 +23,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkey = HotkeyManager(combo: combo) { [weak self] in self?.togglePopover() }
         hotkey.register()
 
+        // Register with TCC on every launch so the app appears in Privacy panes.
+        // These calls are safe to repeat — they only prompt once per permission state.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Accessibility: needed for CGEvent paste simulation
+            if !PermissionRequester.accessibilityGranted {
+                PermissionRequester.requestAccessibility()
+            }
+            // Input Monitoring: needed for global hotkey
+            if !PermissionRequester.inputMonitoringGranted {
+                PermissionRequester.requestInputMonitoring()
+            }
+        }
+
         if !PreferencesManager.shared.hasCompletedSetup {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 SetupWizardWindowController.show()
             }
         }

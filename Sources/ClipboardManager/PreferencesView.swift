@@ -79,20 +79,26 @@ struct PreferencesView: View {
 
             Section {
                 HStack(spacing: 12) {
-                    PermissionStatus(check: { AXIsProcessTrusted() }, label: "Accessibility")
-                    Button("Open") {
-                        NSWorkspace.shared.open(
-                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    PermissionStatus(check: { PermissionRequester.accessibilityGranted }, label: "Accessibility")
+                    Button(PermissionRequester.accessibilityGranted ? "Settings" : "Request") {
+                        if PermissionRequester.accessibilityGranted {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                        } else {
+                            PermissionRequester.requestAccessibility()
+                        }
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
 
                 HStack(spacing: 12) {
-                    PermissionStatus(check: { CGPreflightListenEventAccess() }, label: "Input Monitoring")
-                    Button("Open") {
-                        NSWorkspace.shared.open(
-                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+                    PermissionStatus(check: { PermissionRequester.inputMonitoringGranted }, label: "Input Monitoring")
+                    Button(PermissionRequester.inputMonitoringGranted ? "Settings" : "Request") {
+                        if PermissionRequester.inputMonitoringGranted {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+                        } else {
+                            PermissionRequester.requestInputMonitoring()
+                        }
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
