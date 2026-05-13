@@ -7,6 +7,7 @@ struct ClipboardRowView: View {
     let onDelete: () -> Void
     let onPin: () -> Void
 
+    @ObservedObject private var prefs = PreferencesManager.shared
     @State private var isHovered = false
     @State private var thumbnailImage: NSImage?
 
@@ -16,25 +17,30 @@ struct ClipboardRowView: View {
         return fmt.localizedString(for: entry.date, relativeTo: Date())
     }
 
+    private var fontSize: CGFloat { prefs.rowDensity.primaryFontSize }
+    private var vPad: CGFloat { prefs.rowDensity.verticalPadding }
+
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            typeIndicator
+            if prefs.showTypeIcon {
+                typeIndicator
+            }
             contentArea
             Spacer(minLength: 4)
             if isHovered || isSelected {
                 actionButtons
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: .trailing)))
             }
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, vPad)
         .padding(.horizontal, 10)
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2, perform: onPaste)
-        .animation(.easeInOut(duration: 0.12), value: isHovered)
-        .animation(.easeInOut(duration: 0.12), value: isSelected)
+        .animation(.easeInOut(duration: 0.1), value: isHovered)
+        .animation(.easeInOut(duration: 0.1), value: isSelected)
         .task(id: entry.id) {
             if entry.type == .image {
                 thumbnailImage = ClipboardStore.shared.loadImage(for: entry)
@@ -42,16 +48,16 @@ struct ClipboardRowView: View {
         }
     }
 
-    // MARK: - Sub-views
+    // MARK: - Type Indicator
 
     @ViewBuilder
     private var typeIndicator: some View {
         switch entry.type {
         case .text:
-            Image(systemName: "doc.text")
-                .font(.system(size: 13))
+            Image(systemName: "doc.text.fill")
+                .font(.system(size: 12))
                 .foregroundStyle(.tertiary)
-                .frame(width: 28)
+                .frame(width: 26)
 
         case .image:
             Group {
@@ -60,39 +66,34 @@ struct ClipboardRowView: View {
                         .resizable()
                         .scaledToFill()
                 } else {
-                    Image(systemName: "photo")
-                        .font(.system(size: 13))
+                    Image(systemName: "photo.fill")
+                        .font(.system(size: 12))
                         .foregroundStyle(.tertiary)
                 }
             }
-            .frame(width: 42, height: 42)
+            .frame(width: 38, height: 38)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+            )
 
         case .file:
             Image(systemName: "doc.fill")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .frame(width: 28)
+                .font(.system(size: 12))
+                .foregroundStyle(.blue.opacity(0.7))
+                .frame(width: 26)
         }
     }
 
+    // MARK: - Content Area
+
     private var contentArea: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             primaryText
-            HStack(spacing: 5) {
-                if entry.isPinned {
-                    Image(systemName: "pin.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.orange)
-                }
-                Text(timeAgo)
-                if let meta = metaLabel {
-                    Text("·")
-                    Text(meta)
-                }
+            if prefs.showTimestamps || prefs.showCharCount {
+                metaRow
             }
-            .font(.system(size: 10))
-            .foregroundStyle(.tertiary)
         }
     }
 
@@ -105,23 +106,43 @@ struct ClipboardRowView: View {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "\n", with: " ")
                 .replacingOccurrences(of: "\t", with: " ") ?? ""
-            let preview = raw.count > 150 ? String(raw.prefix(150)) + "…" : raw
+            let limit = prefs.rowDensity == .compact ? 80 : 150
+            let preview = raw.count > limit ? String(raw.prefix(limit)) + "…" : raw
             Text(preview)
-                .font(.system(size: 12))
-                .lineLimit(2)
+                .font(.system(size: fontSize))
+                .lineLimit(prefs.rowDensity == .compact ? 1 : 2)
                 .foregroundStyle(.primary)
 
         case .image:
             Text("Image")
-                .font(.system(size: 12))
+                .font(.system(size: fontSize))
                 .foregroundStyle(.secondary)
 
         case .file:
             Text(entry.fileName ?? "File")
-                .font(.system(size: 12))
+                .font(.system(size: fontSize))
                 .lineLimit(1)
                 .foregroundStyle(.primary)
         }
+    }
+
+    private var metaRow: some View {
+        HStack(spacing: 5) {
+            if entry.isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.orange)
+            }
+            if prefs.showTimestamps {
+                Text(timeAgo)
+            }
+            if let meta = metaLabel, prefs.showCharCount {
+                Text("·")
+                Text(meta)
+            }
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(.tertiary)
     }
 
     private var metaLabel: String? {
@@ -139,34 +160,51 @@ struct ClipboardRowView: View {
         }
     }
 
+    // MARK: - Row Background
+
     private var rowBackground: some View {
         RoundedRectangle(cornerRadius: 8)
             .fill(
                 isSelected
-                    ? Color.accentColor.opacity(0.14)
-                    : isHovered ? Color.primary.opacity(0.06) : Color.clear
+                    ? Color.accentColor.opacity(0.12)
+                    : isHovered ? Color.primary.opacity(0.05) : Color.clear
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(
-                        isSelected ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                        isSelected ? Color.accentColor.opacity(0.25) : Color.clear,
+                        lineWidth: 1
+                    )
             )
     }
 
+    // MARK: - Action Buttons
+
     private var actionButtons: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             RowActionButton(
-                icon: entry.isPinned ? "pin.slash" : "pin",
+                icon: entry.isPinned ? "pin.slash.fill" : "pin.fill",
                 tint: .orange,
                 help: entry.isPinned ? "Unpin" : "Pin",
                 action: onPin
             )
             RowActionButton(
-                icon: "doc.on.clipboard", tint: .accentColor, help: "Paste", action: onPaste)
-            RowActionButton(icon: "trash", tint: .red, help: "Delete", action: onDelete)
+                icon: "arrow.up.to.line",
+                tint: .accentColor,
+                help: "Paste",
+                action: onPaste
+            )
+            RowActionButton(
+                icon: "trash.fill",
+                tint: .red,
+                help: "Delete",
+                action: onDelete
+            )
         }
     }
 }
+
+// MARK: - Row Action Button
 
 private struct RowActionButton: View {
     let icon: String
@@ -176,7 +214,7 @@ private struct RowActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon).font(.system(size: 11))
+            Image(systemName: icon).font(.system(size: 10, weight: .medium))
         }
         .buttonStyle(PillButtonStyle(tint: tint))
         .help(help)
@@ -191,8 +229,10 @@ private struct PillButtonStyle: ButtonStyle {
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(tint.opacity(configuration.isPressed ? 0.28 : 0.13))
+                    .fill(tint.opacity(configuration.isPressed ? 0.25 : 0.11))
             )
             .foregroundStyle(tint)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)
     }
 }

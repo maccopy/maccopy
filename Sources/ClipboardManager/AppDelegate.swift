@@ -41,6 +41,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 SetupWizardWindowController.show()
             }
         }
+
+        PreferencesManager.shared.applyAppearance()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            UpdateChecker.shared.checkOnLaunch()
+        }
     }
 
     // MARK: - Status Bar

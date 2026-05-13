@@ -1,3 +1,4 @@
+import AppKit
 import Carbon.HIToolbox
 import Foundation
 
@@ -34,6 +35,54 @@ struct KeyCombo: Codable, Equatable {
     }
 }
 
+enum AppearanceMode: String, Codable, CaseIterable {
+    case system, light, dark
+
+    var displayName: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
+enum RowDensity: String, Codable, CaseIterable {
+    case compact, comfortable, spacious
+
+    var displayName: String {
+        switch self {
+        case .compact: return "Compact"
+        case .comfortable: return "Comfortable"
+        case .spacious: return "Spacious"
+        }
+    }
+
+    var verticalPadding: CGFloat {
+        switch self {
+        case .compact: return 5
+        case .comfortable: return 8
+        case .spacious: return 12
+        }
+    }
+
+    var primaryFontSize: CGFloat {
+        switch self {
+        case .compact: return 11
+        case .comfortable: return 12
+        case .spacious: return 13
+        }
+    }
+}
+
 @MainActor
 final class PreferencesManager: ObservableObject {
     static let shared = PreferencesManager()
@@ -51,6 +100,24 @@ final class PreferencesManager: ObservableObject {
     @Published var iCloudSyncEnabled: Bool { didSet { save() } }
     @Published var hasCompletedSetup: Bool { didSet { save() } }
 
+    // Appearance
+    @Published var appearanceMode: AppearanceMode {
+        didSet {
+            applyAppearance()
+            save()
+        }
+    }
+    @Published var rowDensity: RowDensity { didSet { save() } }
+    @Published var showTimestamps: Bool { didSet { save() } }
+    @Published var showCharCount: Bool { didSet { save() } }
+    @Published var showTypeIcon: Bool { didSet { save() } }
+    @Published var popoverWidth: Double { didSet { save() } }
+
+    @Published var useGlassEffect: Bool { didSet { save() } }
+
+    // Updates
+    @Published var autoCheckUpdates: Bool { didSet { save() } }
+
     private init() {
         if let data = defaults.data(forKey: "hotkey"),
             let combo = try? JSONDecoder().decode(KeyCombo.self, from: data)
@@ -64,6 +131,32 @@ final class PreferencesManager: ObservableObject {
         launchAtLogin = defaults.bool(forKey: "launchAtLogin")
         iCloudSyncEnabled = defaults.bool(forKey: "iCloudSyncEnabled")
         hasCompletedSetup = defaults.bool(forKey: "hasCompletedSetup")
+
+        // Appearance
+        if let raw = defaults.string(forKey: "appearanceMode"),
+            let mode = AppearanceMode(rawValue: raw)
+        {
+            appearanceMode = mode
+        } else {
+            appearanceMode = .system
+        }
+        if let raw = defaults.string(forKey: "rowDensity"),
+            let density = RowDensity(rawValue: raw)
+        {
+            rowDensity = density
+        } else {
+            rowDensity = .comfortable
+        }
+        showTimestamps = defaults.object(forKey: "showTimestamps") as? Bool ?? true
+        showCharCount = defaults.object(forKey: "showCharCount") as? Bool ?? true
+        showTypeIcon = defaults.object(forKey: "showTypeIcon") as? Bool ?? true
+        let w = defaults.double(forKey: "popoverWidth")
+        popoverWidth = w > 0 ? w : 440
+
+        useGlassEffect = defaults.object(forKey: "useGlassEffect") as? Bool ?? true
+
+        // Updates
+        autoCheckUpdates = defaults.object(forKey: "autoCheckUpdates") as? Bool ?? true
     }
 
     private func save() {
@@ -74,6 +167,18 @@ final class PreferencesManager: ObservableObject {
         defaults.set(launchAtLogin, forKey: "launchAtLogin")
         defaults.set(iCloudSyncEnabled, forKey: "iCloudSyncEnabled")
         defaults.set(hasCompletedSetup, forKey: "hasCompletedSetup")
+        defaults.set(appearanceMode.rawValue, forKey: "appearanceMode")
+        defaults.set(rowDensity.rawValue, forKey: "rowDensity")
+        defaults.set(showTimestamps, forKey: "showTimestamps")
+        defaults.set(showCharCount, forKey: "showCharCount")
+        defaults.set(showTypeIcon, forKey: "showTypeIcon")
+        defaults.set(popoverWidth, forKey: "popoverWidth")
+        defaults.set(useGlassEffect, forKey: "useGlassEffect")
+        defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates")
+    }
+
+    func applyAppearance() {
+        NSApp.appearance = appearanceMode.nsAppearance
     }
 
     private func applyLaunchAtLogin() {

@@ -6,24 +6,26 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
 ---
 
-## Install — one command
+## Install
+
+### Option A — Download DMG (recommended, no Xcode needed)
+
+1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
+2. Download `ClipboardManager-x.x.x.dmg`
+3. Open the DMG → drag **ClipboardManager** to **Applications**
+4. Launch from Applications or Spotlight
+
+> **First launch blocked by Gatekeeper?** Right-click the app → **Open** → **Open** in the dialog. Only needed once.
+
+---
+
+### Option B — One-liner installer (builds from source or downloads pre-built)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash
 ```
 
-That's it. The installer will:
-
-1. Clone the repo to a temp directory
-2. Check Swift / macOS version
-3. Build a release binary
-4. Generate the app icon (`AppIcon.icns`)
-5. Package `ClipboardManager.app` → `~/Applications/`
-6. Ad-hoc code-sign the bundle
-7. Install a LaunchAgent (auto-starts at login)
-8. Trigger Accessibility + Input Monitoring permission dialogs
-9. Launch the app
-10. Clean up the temp clone
+The installer automatically tries to download a pre-built binary from the latest release. If unavailable, it builds from source (requires Xcode Command Line Tools).
 
 ---
 
@@ -31,16 +33,17 @@ That's it. The installer will:
 
 | | Feature | Details |
 |---|---|---|
-| 📋 | **Text history** | Up to 50 items (configurable 10–500) |
-| 🖼 | **Image support** | Captures images from clipboard, shows thumbnails |
-| 📁 | **File support** | Captures file URLs, shows name + size |
-| 📌 | **Pin / favourite** | Pin any item — stays at the top permanently |
-| ⌨️ | **Keyboard navigation** | Arrow keys to move, Enter to paste, Escape to close |
+| 📋 | **Clipboard history** | Text, images, and files — up to 1000 items |
+| 🖼 | **Image thumbnails** | Inline previews for copied images |
+| 📁 | **File tracking** | File name + size for copied files |
+| 📌 | **Pin / favourite** | Pinned items stay at the top permanently |
+| ⌨️ | **Keyboard navigation** | Arrow keys, Enter to paste, Escape to close |
 | 🔍 | **Live search** | Instant filter across all item types |
-| ☁️ | **iCloud Drive sync** | Syncs text history across your Macs (no entitlements needed) |
-| ⚙️ | **Preferences window** | Hotkey display, history size, launch at login, iCloud toggle |
-| 🧙 | **Setup Wizard** | 5-step onboarding — walks through permissions & preferences |
-| 🎨 | **Custom icon** | Generated at install time via CoreGraphics |
+| 🎨 | **Appearance** | Glass/blur toggle, theme (system/light/dark), row density, font size |
+| 🔔 | **Auto-updates** | Checks GitHub Releases, shows in-app changelog |
+| ☁️ | **iCloud sync** | Syncs text history across Macs |
+| ⚙️ | **Preferences** | Hotkey, history limit, appearance, update settings |
+| 🧙 | **Setup Wizard** | 5-step onboarding for permissions & first-time config |
 
 ---
 
@@ -48,12 +51,12 @@ That's it. The installer will:
 
 | Action | How |
 |---|---|
-| Open history | **⌘⇧V** from any app, or click the 📋 menu bar icon |
-| Navigate | **↑ / ↓** arrow keys; **↓** from search bar jumps to list |
+| Open history | **⌘⇧V** from any app, or click the menu bar icon |
+| Navigate list | **↑ / ↓** arrow keys |
 | Paste item | **Enter** (selected) or **double-click** any row |
-| Search | Type in the search box — filters all types live |
-| Pin item | Hover a row → **pin** button (orange); pinned items stay at top |
-| Delete item | Hover a row → **trash** button |
+| Search | Type in the search bar — filters all types live |
+| Pin item | Hover → **pin** button (orange) |
+| Delete item | Hover → **trash** button |
 | Clear all | Footer → **Clear**, or right-click icon → Clear History |
 | Preferences | Footer → **Preferences**, or right-click icon → Preferences… |
 | Quit | Right-click icon → Quit |
@@ -62,14 +65,14 @@ That's it. The installer will:
 
 ## Permissions
 
-Two are required for full functionality. The app requests both automatically on first launch.
+Two are needed for full functionality. The Setup Wizard requests both on first launch.
 
-| Permission | Needed for | How to grant |
-|---|---|---|
-| **Accessibility** | Simulating ⌘V to paste into the active app | System Settings → Privacy & Security → Accessibility → add `ClipboardManager.app` |
-| **Input Monitoring** | Detecting the global hotkey ⌘⇧V | System Settings → Privacy & Security → Input Monitoring → add `ClipboardManager.app` |
+| Permission | Used for |
+|---|---|
+| **Accessibility** | Simulate ⌘V to paste into the active app |
+| **Input Monitoring** | Detect the global hotkey ⌘⇧V |
 
-> The Setup Wizard (shown on first launch) has **"Request … Access"** buttons that trigger the system dialogs directly.
+Grant via **System Settings → Privacy & Security** if the wizard dialogs are dismissed.
 
 ---
 
@@ -79,7 +82,7 @@ Two are required for full functionality. The app requests both automatically on 
 bash uninstall.sh
 ```
 
-Or from a fresh clone:
+Or:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/uninstall.sh | bash
@@ -87,14 +90,20 @@ curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-mana
 
 ---
 
-## Manual / dev build
+## Build from source
 
 ```bash
 git clone https://github.com/FernandoHaeser/macos-clipboard-manager.git
 cd macos-clipboard-manager
 bash install.sh          # full install
 # or
-./run.sh                 # quick dev launch (raw binary, no .app bundle)
+./run.sh                 # quick dev run (no .app bundle)
+```
+
+To build a DMG locally:
+
+```bash
+bash Scripts/make_dmg.sh
 ```
 
 ---
@@ -102,41 +111,53 @@ bash install.sh          # full install
 ## Requirements
 
 - macOS 14 Sonoma or later
-- Xcode Command Line Tools — install with `xcode-select --install`
-- Internet access (first install only, to clone the repo)
+- **DMG install:** no additional requirements
+- **Build from source:** Xcode Command Line Tools (`xcode-select --install`)
 
 ---
 
-## Project Structure
+## Releasing a new version
+
+1. Update `static let currentVersion` in `UpdateChecker.swift`
+2. Commit and tag: `git tag v1.2.3 && git push origin v1.2.3`
+3. GitHub Actions builds the DMG automatically and attaches it to the release
+
+---
+
+## Project structure
 
 ```
 clipboard-manager/
 ├── Package.swift
 ├── Sources/ClipboardManager/
 │   ├── main.swift                  entry point
-│   ├── AppDelegate.swift           status bar, popover, paste, TCC permission requests
+│   ├── AppDelegate.swift           status bar, popover, paste, TCC permissions
 │   ├── ClipboardEntry.swift        model — text / image / file, pin flag, Codable
-│   ├── ClipboardStore.swift        history store — add, delete, pin, trim, iCloud sync
-│   ├── ClipboardMonitor.swift      NSPasteboard polling — text, image, file URL detection
-│   ├── HotkeyManager.swift         Carbon RegisterEventHotKey — reads hotkey from prefs
-│   ├── PreferencesManager.swift    UserDefaults-backed preferences — hotkey, history, login
-│   ├── PermissionRequester.swift   AXIsProcessTrustedWithOptions + CGRequestListenEventAccess
-│   ├── PopoverController.swift     NSPopover lifecycle, outside-click to close
-│   ├── ContentView.swift           SwiftUI root — search, List with sections, keyboard nav
-│   ├── ClipboardRowView.swift      row — text preview / image thumbnail / file icon + actions
-│   ├── SetupWizardView.swift       5-step onboarding NSWindow
-│   ├── PreferencesView.swift       preferences NSWindow
+│   ├── ClipboardStore.swift        history — add, delete, pin, trim, iCloud sync
+│   ├── ClipboardMonitor.swift      NSPasteboard polling
+│   ├── HotkeyManager.swift         Carbon RegisterEventHotKey
+│   ├── PreferencesManager.swift    UserDefaults-backed settings
+│   ├── PermissionRequester.swift   Accessibility + Input Monitoring TCC
+│   ├── PopoverController.swift     NSPopover lifecycle
+│   ├── UpdateChecker.swift         GitHub Releases API — version check + changelog
+│   ├── ContentView.swift           SwiftUI root — search, list, update banner
+│   ├── ClipboardRowView.swift      row — preview, thumbnail, action buttons
+│   ├── SetupWizardView.swift       5-step onboarding
+│   ├── PreferencesView.swift       preferences window — appearance, updates, permissions
 │   └── Extensions.swift            NSImage resize + PNG export
 ├── Scripts/
-│   └── make_icon.swift             headless CoreGraphics icon renderer → AppIcon.icns
-├── install.sh                      installer (works via curl | bash or local bash)
+│   ├── make_icon.swift             CoreGraphics icon renderer → AppIcon.icns
+│   └── make_dmg.sh                 creates drag-to-install DMG
+├── .github/workflows/
+│   └── release.yml                 builds + publishes DMG on new version tags
+├── install.sh                      downloads pre-built or builds from source
 ├── uninstall.sh
 └── run.sh
 ```
 
 ---
 
-## How It Works
+## How it works
 
 ```
 NSPasteboard  (polled every 500 ms)
