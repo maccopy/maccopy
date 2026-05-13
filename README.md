@@ -28,35 +28,48 @@ Built with **Swift + AppKit + SwiftUI**. Runs as a menu bar app with no Dock ico
 
 ---
 
-## Quick Start
+## Install (one command)
+
+```bash
+bash install.sh
+```
+
+`install.sh`:
+1. Builds release binary via `swift build`
+2. Packages `ClipboardManager.app` into `~/Applications/`
+3. Installs a LaunchAgent → auto-starts at login
+4. Opens System Settings for the two required permissions
+5. Launches the app
+
+Permissions attach to the `.app` bundle, not the terminal.
+
+**Uninstall:**
+```bash
+bash uninstall.sh
+```
+
+---
+
+## Manual run (dev/testing)
 
 ```bash
 ./run.sh
 ```
 
-`run.sh` runs `swift build -c release` and launches the binary.
-
-Or manually:
-
-```bash
-swift build -c release
-.build/release/ClipboardManager
-```
+Builds and launches the raw binary (no `.app`, permissions attach to terminal).
 
 ---
 
 ## First-Run Permissions
 
-macOS will prompt for two permissions. Grant both for full functionality:
+Two permissions required — `install.sh` opens System Settings automatically:
 
 | Permission | Path | Needed for |
 |---|---|---|
 | **Accessibility** | System Settings → Privacy & Security → Accessibility | Simulating ⌘V keystroke to paste |
 | **Input Monitoring** | System Settings → Privacy & Security → Input Monitoring | Global hotkey (⌘⇧V) detection |
 
-Add the **Terminal** app (or whichever terminal you use to run `./run.sh`) to both lists.
-
-After granting, re-run `./run.sh`.
+Add `~/Applications/ClipboardManager.app` to both lists.
 
 ---
 
@@ -88,7 +101,9 @@ clipboard-manager/
 │   ├── PopoverController.swift           # NSPopover lifecycle + outside-click-to-close
 │   ├── ContentView.swift                 # SwiftUI root: search bar + list + footer
 │   └── ClipboardRowView.swift            # SwiftUI row: preview text + hover actions
-├── run.sh                                # Build + launch script
+├── install.sh                            # One-command installer: build → .app bundle → LaunchAgent → permissions
+├── uninstall.sh                          # Removes app, LaunchAgent, optionally history data
+├── run.sh                                # Dev runner: build + launch raw binary
 └── README.md
 ```
 
@@ -96,7 +111,7 @@ clipboard-manager/
 
 ## How It Works
 
-```
+```text
 NSPasteboard.general
       │  polled every 500 ms via Timer
       ▼
@@ -139,16 +154,14 @@ AppDelegate.performPaste(_:)
 - No configurable hotkey (hardcoded ⌘⇧V)
 - No item pinning / favourites
 - No dark/light mode accent customisation beyond system defaults
-- Must run from a terminal with Accessibility + Input Monitoring permissions granted
 
 ---
 
 ## Roadmap (post-MVP)
 
-- [ ] Build as proper `.app` bundle with Xcode so permissions attach to the app, not the terminal
+- [x] Build as proper `.app` bundle so permissions attach to the app, not the terminal (`install.sh`)
 - [ ] Image and file clipboard support
 - [ ] Preferences window (hotkey, max history, launch at login)
 - [ ] Keyboard navigation (arrow keys + Enter to paste)
 - [ ] Pin/favourite items
 - [ ] iCloud sync via CloudKit
-# macos-clipboard-manager
