@@ -23,7 +23,16 @@ struct ContentView: View {
             footer
         }
         .frame(width: prefs.popoverWidth, height: 540)
-        .background(prefs.useGlassEffect ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color(NSColor.windowBackgroundColor)))
+        .background(
+            Group {
+                if prefs.useGlassEffect {
+                    Rectangle().fill(.regularMaterial)
+                } else {
+                    Rectangle().fill(Color(NSColor.windowBackgroundColor))
+                }
+            }
+            .opacity(prefs.overlayOpacity)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .onAppear {
             searchFocused = true

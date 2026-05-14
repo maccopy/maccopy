@@ -114,6 +114,7 @@ final class PreferencesManager: ObservableObject {
     @Published var popoverWidth: Double { didSet { save() } }
 
     @Published var useGlassEffect: Bool { didSet { save() } }
+    @Published var overlayOpacity: Double { didSet { save() } }
 
     // Updates
     @Published var autoCheckUpdates: Bool { didSet { save() } }
@@ -154,6 +155,8 @@ final class PreferencesManager: ObservableObject {
         popoverWidth = w > 0 ? w : 440
 
         useGlassEffect = defaults.object(forKey: "useGlassEffect") as? Bool ?? true
+        let opacity = defaults.double(forKey: "overlayOpacity")
+        overlayOpacity = opacity > 0 ? opacity : 0.95
 
         // Updates
         autoCheckUpdates = defaults.object(forKey: "autoCheckUpdates") as? Bool ?? true
@@ -174,6 +177,7 @@ final class PreferencesManager: ObservableObject {
         defaults.set(showTypeIcon, forKey: "showTypeIcon")
         defaults.set(popoverWidth, forKey: "popoverWidth")
         defaults.set(useGlassEffect, forKey: "useGlassEffect")
+        defaults.set(overlayOpacity, forKey: "overlayOpacity")
         defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates")
     }
 

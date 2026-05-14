@@ -105,6 +105,17 @@ struct PreferencesView: View {
                 }
 
                 Toggle("Glass / blur effect", isOn: $prefs.useGlassEffect)
+
+                LabeledContent("Overlay opacity") {
+                    HStack(spacing: 8) {
+                        Slider(value: $prefs.overlayOpacity, in: 0.4...1.0, step: 0.05)
+                            .frame(width: 140)
+                        Text("\(Int(prefs.overlayOpacity * 100))%")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40, alignment: .leading)
+                    }
+                }
                 Toggle("Show type icon", isOn: $prefs.showTypeIcon)
                 Toggle("Show timestamps", isOn: $prefs.showTimestamps)
                 Toggle("Show character count", isOn: $prefs.showCharCount)
