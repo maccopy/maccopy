@@ -4,6 +4,20 @@ Native macOS clipboard history — text, images, and files. Lives in the menu ba
 
 Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
+## Screenshots
+
+
+<img width="501" height="282" alt="image" src="https://github.com/user-attachments/assets/7fb21481-5b50-47f9-ac01-df8d8fc0cfc8" />
+
+
+<img width="500" height="282" alt="image" src="https://github.com/user-attachments/assets/4f094505-ff88-4c07-b5dc-962679239276" />
+
+
+<img width="501" height="284" alt="image" src="https://github.com/user-attachments/assets/0212f6ae-cde6-4fa8-8f4e-3ca8c1ef9d2b" />
+
+
+<img width="501" height="282" alt="image" src="https://github.com/user-attachments/assets/d2e6e00d-f52f-41c1-add6-3c763f84e17e" />
+
 ---
 
 ## Install
