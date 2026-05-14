@@ -38,7 +38,26 @@ final class ClipboardStore: ObservableObject {
         let topUnpinned = entries.first { !$0.isPinned }
         guard topUnpinned?.text != content else { return }
         entries.removeAll { $0.type == .text && $0.text == content && !$0.isPinned }
-        insert(.makeText(content))
+        let entry = ClipboardEntry.makeText(content)
+        insert(entry)
+        if entry.isURL {
+            fetchLinkPreview(for: entry.id, urlString: content)
+        }
+    }
+
+    func updateLinkPreview(id: UUID, preview: LinkPreview) {
+        guard let idx = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[idx].linkPreview = preview
+        save()
+    }
+
+    private func fetchLinkPreview(for id: UUID, urlString: String) {
+        Task {
+            guard let preview = await LinkPreviewFetcher.shared.fetch(urlString: urlString) else {
+                return
+            }
+            updateLinkPreview(id: id, preview: preview)
+        }
     }
 
     func addImage(_ image: NSImage) {

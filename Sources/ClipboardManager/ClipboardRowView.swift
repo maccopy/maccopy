@@ -10,6 +10,7 @@ struct ClipboardRowView: View {
     @ObservedObject private var prefs = PreferencesManager.shared
     @State private var isHovered = false
     @State private var thumbnailImage: NSImage?
+    @State private var faviconImage: NSImage?
 
     private var timeAgo: String {
         let fmt = RelativeDateTimeFormatter()
@@ -46,6 +47,21 @@ struct ClipboardRowView: View {
                 thumbnailImage = ClipboardStore.shared.loadImage(for: entry)
             }
         }
+        .task(id: entry.linkPreview?.faviconURL) {
+            guard entry.isURL, let urlStr = entry.linkPreview?.faviconURL else { return }
+            faviconImage = await loadFaviconImage(from: urlStr)
+        }
+        .task(id: entry.isURL && entry.linkPreview == nil) {
+            guard entry.isURL, entry.linkPreview == nil,
+                let urlStr = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+            else { return }
+            guard let preview = await LinkPreviewFetcher.shared.fetch(urlString: urlStr) else {
+                return
+            }
+            await MainActor.run {
+                ClipboardStore.shared.updateLinkPreview(id: entry.id, preview: preview)
+            }
+        }
     }
 
     // MARK: - Type Indicator
@@ -54,15 +70,20 @@ struct ClipboardRowView: View {
     private var typeIndicator: some View {
         switch entry.type {
         case .text:
-            Image(systemName: "doc.text.fill")
-                .font(.system(size: 12))
-                .foregroundStyle(.tertiary)
-                .frame(width: 26)
+            if entry.isURL {
+                urlFaviconIndicator
+            } else {
+                Image(systemName: "doc.text.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 26)
+            }
 
         case .image:
             Group {
                 if let img = thumbnailImage {
                     Image(nsImage: img)
+                        .renderingMode(.original)
                         .resizable()
                         .scaledToFill()
                 } else {
@@ -79,10 +100,61 @@ struct ClipboardRowView: View {
             )
 
         case .file:
+            fileTypeIndicator
+        }
+    }
+
+    @ViewBuilder
+    private var urlFaviconIndicator: some View {
+        Group {
+            if let img = faviconImage {
+                Image(nsImage: img)
+                    .renderingMode(.original)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+            } else {
+                Image(systemName: "link")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.blue.opacity(0.7))
+            }
+        }
+        .frame(width: 26)
+    }
+
+    @ViewBuilder
+    private var fileTypeIndicator: some View {
+        if let ext = entry.fileExtension {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(fileTypeColor(ext).opacity(0.12))
+                Text(String(ext.prefix(4)))
+                    .font(.system(size: ext.count <= 3 ? 8 : 7, weight: .semibold))
+                    .foregroundStyle(fileTypeColor(ext))
+            }
+            .frame(width: 26, height: 20)
+        } else {
             Image(systemName: "doc.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.blue.opacity(0.7))
                 .frame(width: 26)
+        }
+    }
+
+    private func fileTypeColor(_ ext: String) -> Color {
+        switch ext.lowercased() {
+        case "pdf": return .red
+        case "zip", "gz", "tar", "rar", "7z": return .purple
+        case "mp4", "mov", "avi", "mkv", "m4v": return .blue
+        case "mp3", "wav", "aac", "flac", "m4a": return .green
+        case "jpg", "jpeg", "png", "gif", "webp", "heic", "tiff": return .orange
+        case "swift", "py", "js", "ts", "rs", "go", "kt", "java", "cpp", "c": return .mint
+        case "doc", "docx": return .blue
+        case "xls", "xlsx": return .green
+        case "ppt", "pptx": return .orange
+        case "html", "htm", "css": return .pink
+        case "json", "yaml", "toml", "xml": return .yellow
+        default: return .secondary
         }
     }
 
@@ -101,17 +173,28 @@ struct ClipboardRowView: View {
     private var primaryText: some View {
         switch entry.type {
         case .text:
-            let raw =
-                entry.text?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .replacingOccurrences(of: "\n", with: " ")
-                .replacingOccurrences(of: "\t", with: " ") ?? ""
-            let limit = prefs.rowDensity == .compact ? 80 : 150
-            let preview = raw.count > limit ? String(raw.prefix(limit)) + "…" : raw
-            Text(preview)
-                .font(.system(size: fontSize))
-                .lineLimit(prefs.rowDensity == .compact ? 1 : 2)
-                .foregroundStyle(.primary)
+            if entry.isURL {
+                let display =
+                    entry.linkPreview?.title
+                    ?? entry.linkPreview?.domain
+                    ?? entry.text ?? ""
+                Text(display)
+                    .font(.system(size: fontSize))
+                    .lineLimit(1)
+                    .foregroundStyle(.primary)
+            } else {
+                let raw =
+                    entry.text?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "\n", with: " ")
+                    .replacingOccurrences(of: "\t", with: " ") ?? ""
+                let limit = prefs.rowDensity == .compact ? 80 : 150
+                let preview = raw.count > limit ? String(raw.prefix(limit)) + "…" : raw
+                Text(preview)
+                    .font(.system(size: fontSize))
+                    .lineLimit(prefs.rowDensity == .compact ? 1 : 2)
+                    .foregroundStyle(.primary)
+            }
 
         case .image:
             Text("Image")
@@ -148,6 +231,9 @@ struct ClipboardRowView: View {
     private var metaLabel: String? {
         switch entry.type {
         case .text:
+            if entry.isURL {
+                return entry.linkPreview?.domain
+            }
             let c = entry.text?.count ?? 0
             return "\(c) char\(c == 1 ? "" : "s")"
         case .image:
@@ -155,7 +241,7 @@ struct ClipboardRowView: View {
         case .file:
             guard let url = entry.fileURL,
                 let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize
-            else { return nil }
+            else { return entry.fileExtension }
             return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
         }
     }
