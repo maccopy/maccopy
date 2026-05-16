@@ -63,14 +63,15 @@ struct ContentView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.tertiary)
-                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(searchFocused ? Color.accentColor.opacity(0.8) : Color.secondary.opacity(0.5))
+                .font(.system(size: 14, weight: .medium))
+                .animation(.easeInOut(duration: 0.15), value: searchFocused)
 
             TextField("Search clipboard history…", text: $store.searchQuery)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .focused($searchFocused)
                 .onKeyPress(.return) {
                     pasteSelected()
@@ -95,14 +96,16 @@ struct ContentView: View {
                 Button {
                     store.searchQuery = ""
                 } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 15))
                 }
                 .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(0.8)))
+                .transition(.opacity.combined(with: .scale(0.75)))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
     }
 
     // MARK: - Update Banner
@@ -212,10 +215,11 @@ struct ContentView: View {
 
     private func sectionHeader(_ title: String, icon: String, color: Color) -> some View {
         Label(title, systemImage: icon)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(color)
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .foregroundStyle(color.opacity(0.7))
             .textCase(nil)
-            .padding(.vertical, 2)
+            .padding(.vertical, 3)
+            .padding(.horizontal, 2)
     }
 
     private func rowView(_ entry: ClipboardEntry) -> some View {
@@ -229,7 +233,7 @@ struct ContentView: View {
         .tag(entry.id)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-        .listRowInsets(EdgeInsets(top: 1, leading: 6, bottom: 1, trailing: 6))
+        .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
     }
 
     private var emptyState: some View {
@@ -260,19 +264,19 @@ struct ContentView: View {
 
     private var footer: some View {
         HStack(spacing: 0) {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Image(systemName: "doc.on.clipboard")
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.quaternary)
                 Text(countLabel)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.tertiary)
             }
 
             Spacer()
 
             HStack(spacing: 2) {
-                footerButton("Preferences", icon: "gearshape") {
+                footerButton("Preferences", icon: "gearshape.fill") {
                     AppDelegate.shared?.openPreferences()
                 }
                 footerDivider
@@ -281,8 +285,8 @@ struct ContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     private var countLabel: String {
