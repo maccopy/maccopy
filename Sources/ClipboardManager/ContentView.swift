@@ -66,6 +66,7 @@ struct ContentView: View {
                 }
                 .onKeyPress(.downArrow) {
                     if selectedID == nil { selectedID = allFiltered.first?.id }
+                    else { moveSelection(by: 1) }
                     searchFocused = false
                     return .handled
                 }
@@ -145,7 +146,7 @@ struct ContentView: View {
             emptyState
         } else {
             ScrollViewReader { proxy in
-                List(selection: $selectedID) {
+                List {
                     if !pinned.isEmpty {
                         Section {
                             ForEach(pinned) { entry in
@@ -176,6 +177,14 @@ struct ContentView: View {
                 }
                 .onKeyPress(.escape) {
                     searchFocused = true
+                    return .handled
+                }
+                .onKeyPress(.upArrow) {
+                    moveSelection(by: -1)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    moveSelection(by: 1)
                     return .handled
                 }
                 .onChange(of: selectedID) {
@@ -297,6 +306,14 @@ struct ContentView: View {
             selectedID.flatMap { id in allFiltered.first { $0.id == id } }
             ?? allFiltered.first
         if let entry = target { store.paste(entry) }
+    }
+
+    private func moveSelection(by delta: Int) {
+        let ids = allFiltered.map(\.id)
+        guard !ids.isEmpty else { return }
+        let current = selectedID.flatMap { ids.firstIndex(of: $0) } ?? -1
+        let next = max(0, min(ids.count - 1, current + delta))
+        selectedID = ids[next]
     }
 }
 
