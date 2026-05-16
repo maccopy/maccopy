@@ -272,8 +272,10 @@ struct ContentView: View {
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
+            keyboardHints
+                .frame(maxWidth: .infinity, alignment: .center)
 
             HStack(spacing: 2) {
                 footerButton("Preferences", icon: "gearshape.fill") {
@@ -284,9 +286,39 @@ struct ContentView: View {
                     showClearConfirm = true
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    private var keyboardHints: some View {
+        HStack(spacing: 8) {
+            hintGroup(key: "↑↓", label: "navigate")
+            hintGroup(key: "↩", label: "paste")
+            hintGroup(key: "⎋", label: "close")
+        }
+    }
+
+    private func hintGroup(key: String, label: String) -> some View {
+        HStack(spacing: 3) {
+            Text(key)
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.quaternary)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.primary.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                        )
+                )
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundStyle(.quaternary)
+        }
     }
 
     private var countLabel: String {
