@@ -13,75 +13,82 @@ func renderIcon(size: Int) -> Data? {
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     ) else { return nil }
 
-    // Background rounded rect
-    let inset = s * 0.04
+    // Background rounded rect — orange-to-red gradient (matches website/app/icon.svg)
+    let inset = s * 0.00
     let radius = s * 0.22
     let bgRect = CGRect(x: inset, y: inset, width: s - inset * 2, height: s - inset * 2)
     let bgPath = CGPath(roundedRect: bgRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
 
-    // Gradient: indigo-blue top to deep-blue bottom
+    // #FF6B35 → #F05138  (top-left to bottom-right)
     let colors = [
-        CGColor(red: 0.30, green: 0.55, blue: 1.00, alpha: 1.0),
-        CGColor(red: 0.10, green: 0.22, blue: 0.90, alpha: 1.0),
+        CGColor(red: 1.00, green: 0.42, blue: 0.21, alpha: 1.0),  // #FF6B35
+        CGColor(red: 0.94, green: 0.32, blue: 0.22, alpha: 1.0),  // #F05138
     ] as CFArray
     let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 1.0])!
     ctx.addPath(bgPath)
     ctx.clip()
     ctx.drawLinearGradient(gradient,
                            start: CGPoint(x: 0, y: s),
-                           end: CGPoint(x: 0, y: 0),
+                           end: CGPoint(x: s, y: 0),
                            options: [])
     ctx.resetClip()
 
-    // --- Clipboard body ---
-    let cInset = s * 0.18
-    let cW = s - cInset * 2
-    let cH = s * 0.60
-    let cX = cInset
-    let cY = s * 0.13
-    let cR = s * 0.06
-    let bodyRect = CGRect(x: cX, y: cY, width: cW, height: cH)
-    let bodyPath = CGPath(roundedRect: bodyRect, cornerWidth: cR, cornerHeight: cR, transform: nil)
-    ctx.addPath(bodyPath)
-    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.92))
+    // Back page — semi-transparent white, offset right+down
+    let backX = s * 0.35
+    let backY = s * 0.13  // CGContext Y is bottom-up; top in SVG = low Y here
+    let backW = s * 0.32
+    let backH = s * 0.40
+    let backR = s * 0.07
+    let backPath = CGPath(roundedRect: CGRect(x: backX, y: backY, width: backW, height: backH),
+                          cornerWidth: backR, cornerHeight: backR, transform: nil)
+    ctx.addPath(backPath)
+    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.45))
     ctx.fillPath()
 
-    // --- Clip (top part of clipboard) ---
-    let clipW = cW * 0.36
-    let clipH = s * 0.11
-    let clipX = cX + (cW - clipW) / 2
-    let clipY = cY + cH - clipH * 0.45
-    let clipR = s * 0.04
-    let clipRect = CGRect(x: clipX, y: clipY, width: clipW, height: clipH)
-    let clipPath = CGPath(roundedRect: clipRect, cornerWidth: clipR, cornerHeight: clipR, transform: nil)
-    ctx.addPath(clipPath)
-    ctx.setFillColor(CGColor(red: 0.30, green: 0.55, blue: 1.00, alpha: 1.0))
-    ctx.fillPath()
+    // Front page — solid white, offset left+up from back page
+    let frontX = s * 0.27
+    let frontY = s * 0.20
+    let frontW = s * 0.32
+    let frontH = s * 0.40
+    let frontR = s * 0.07
 
-    // Small circle hole in clip
-    let holeR = clipH * 0.28
-    let holeRect = CGRect(x: clipX + clipW / 2 - holeR, y: clipY + clipH / 2 - holeR,
-                          width: holeR * 2, height: holeR * 2)
-    ctx.addEllipse(in: holeRect)
-    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.7))
-    ctx.fillPath()
+    // Clip leaf cutout from top-right corner of front page, then draw page
+    ctx.saveGState()
+    let fullPagePath = CGPath(roundedRect: CGRect(x: frontX, y: frontY, width: frontW, height: frontH),
+                               cornerWidth: frontR, cornerHeight: frontR, transform: nil)
 
-    // --- Text lines on clipboard ---
-    let lineColor = CGColor(red: 0.30, green: 0.55, blue: 1.00, alpha: 0.28)
-    let lH = s * 0.044
-    let lR = lH / 2
-    let lX = cX + cW * 0.13
-    let lStartY = cY + cH * 0.17
-    let lSpacing = lH + s * 0.078
-    let lWidths: [CGFloat] = [0.72, 0.72, 0.50]
-    for (i, widthFactor) in lWidths.enumerated() {
-        let lY = lStartY + CGFloat(i) * lSpacing
-        let lW = cW * widthFactor
-        let lineRect = CGRect(x: lX, y: lY, width: lW, height: lH)
-        ctx.addPath(CGPath(roundedRect: lineRect, cornerWidth: lR, cornerHeight: lR, transform: nil))
-        ctx.setFillColor(lineColor)
-        ctx.fillPath()
-    }
+    // Leaf bezier — mirrors SVG path (coordinate-flipped for CoreGraphics bottom-up)
+    // SVG: M43,34 C43,26 47,18 53,15 C54,22 51,29 44,33 C43.5,33.5 43,34 43,34Z
+    // Normalised to 100×100 SVG space then scaled
+    let scale = s / 100.0
+    let leafTx = CGAffineTransform(scaleX: scale, y: -scale)
+        .translatedBy(x: 0, y: -100)
+    let leafPath = CGMutablePath()
+    leafPath.move(to: CGPoint(x: 43, y: 34), transform: leafTx)
+    leafPath.addCurve(to: CGPoint(x: 53, y: 15), control1: CGPoint(x: 43, y: 26),
+                      control2: CGPoint(x: 47, y: 18), transform: leafTx)
+    leafPath.addCurve(to: CGPoint(x: 44, y: 33), control1: CGPoint(x: 54, y: 22),
+                      control2: CGPoint(x: 51, y: 29), transform: leafTx)
+    leafPath.addCurve(to: CGPoint(x: 43, y: 34), control1: CGPoint(x: 43.5, y: 33.5),
+                      control2: CGPoint(x: 43, y: 34), transform: leafTx)
+    leafPath.closeSubpath()
+
+    // Clip = fullPage minus leaf area
+    let combined = CGMutablePath()
+    combined.addPath(fullPagePath)
+    combined.addPath(leafPath)
+    ctx.addPath(combined)
+    ctx.clip(using: .evenOdd)
+
+    ctx.addPath(fullPagePath)
+    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1.0))
+    ctx.fillPath()
+    ctx.restoreGState()
+
+    // Leaf fill — white, drawn on top of back page / gradient
+    ctx.addPath(leafPath)
+    ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1.0))
+    ctx.fillPath()
 
     guard let cgImage = ctx.makeImage() else { return nil }
     let bmi = NSBitmapImageRep(cgImage: cgImage)
