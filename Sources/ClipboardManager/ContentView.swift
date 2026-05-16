@@ -34,6 +34,7 @@ struct ContentView: View {
             .opacity(prefs.overlayOpacity)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay { cmdNumberShortcuts }
         .onAppear {
             searchFocused = true
             selectedID = allFiltered.first?.id
@@ -194,9 +195,11 @@ struct ContentView: View {
     }
 
     private func rowView(_ entry: ClipboardEntry) -> some View {
-        ClipboardRowView(
+        let index = allFiltered.firstIndex(where: { $0.id == entry.id })
+        return ClipboardRowView(
             entry: entry,
             isSelected: selectedID == entry.id,
+            cmdIndex: (index != nil && index! < 9) ? index! + 1 : nil,
             onPaste: { store.paste(entry) },
             onDelete: { store.delete(entry) },
             onPin: { store.togglePin(entry) }
@@ -297,6 +300,18 @@ struct ContentView: View {
             selectedID.flatMap { id in allFiltered.first { $0.id == id } }
             ?? allFiltered.first
         if let entry = target { store.paste(entry) }
+    }
+
+    @ViewBuilder
+    var cmdNumberShortcuts: some View {
+        let digits: [Character] = ["1","2","3","4","5","6","7","8","9"]
+        ForEach(0..<min(9, allFiltered.count), id: \.self) { index in
+            Button("") { store.paste(allFiltered[index]) }
+                .keyboardShortcut(KeyEquivalent(digits[index]), modifiers: .command)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
+        }
     }
 }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct ClipboardRowView: View {
     let entry: ClipboardEntry
     let isSelected: Bool
+    var cmdIndex: Int? = nil
     let onPaste: () -> Void
     let onDelete: () -> Void
     let onPin: () -> Void
@@ -31,6 +32,11 @@ struct ClipboardRowView: View {
             if isHovered || isSelected {
                 actionButtons
                     .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: .trailing)))
+            } else if let n = cmdIndex {
+                Text("⌘\(n)")
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.quaternary)
+                    .transition(.opacity)
             }
         }
         .padding(.vertical, vPad)
