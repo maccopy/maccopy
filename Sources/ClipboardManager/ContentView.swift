@@ -502,11 +502,16 @@ struct ChangelogView: View {
     var isPostInstall: Bool = false
     @Environment(\.dismiss) private var dismiss
 
-    private var markdownBody: AttributedString {
-        (try? AttributedString(
-            markdown: release.changelog,
+    private var lines: [String] {
+        release.changelog.components(separatedBy: "\n")
+    }
+
+    private func inlineText(_ raw: String) -> Text {
+        if let attr = try? AttributedString(
+            markdown: raw,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(release.changelog)
+        ) { return Text(attr) }
+        return Text(raw)
     }
 
     var body: some View {
@@ -540,13 +545,42 @@ struct ChangelogView: View {
 
             // Changelog body
             ScrollView {
-                Text(markdownBody)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.primary)
-                    .lineSpacing(5)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                        if line.hasPrefix("## ") {
+                            Text(String(line.dropFirst(3)))
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.primary)
+                                .padding(.top, idx == 0 ? 0 : 10)
+                        } else if line.hasPrefix("### ") {
+                            Text(String(line.dropFirst(4)))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 6)
+                        } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("•")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 1)
+                                inlineText(String(line.dropFirst(2)))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.primary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        } else if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Color.clear.frame(height: 4)
+                        } else {
+                            inlineText(line)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20)
             }
 
             Divider()
