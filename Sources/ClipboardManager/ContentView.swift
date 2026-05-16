@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var selectedID: UUID?
     @State private var showClearConfirm = false
     @FocusState private var searchFocused: Bool
+    @FocusState private var listFocused: Bool
 
     private var pinned: [ClipboardEntry] { store.filtered.filter { $0.isPinned } }
     private var unpinned: [ClipboardEntry] { store.filtered.filter { !$0.isPinned } }
@@ -59,8 +60,10 @@ struct ContentView: View {
             Text("This will remove \(unpinned) item\(unpinned == 1 ? "" : "s"). Pinned items are kept.")
         }
         .onAppear {
-            searchFocused = true
             selectedID = allFiltered.first?.id
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                searchFocused = true
+            }
         }
         .onChange(of: store.searchQuery) {
             selectedID = allFiltered.first?.id
@@ -94,6 +97,7 @@ struct ContentView: View {
                     if selectedID == nil { selectedID = allFiltered.first?.id }
                     else { moveSelection(by: 1) }
                     searchFocused = false
+                    listFocused = true
                     return .handled
                 }
                 .onKeyPress(.escape) {
@@ -212,16 +216,19 @@ struct ContentView: View {
                 }
                 .listStyle(.inset)
                 .scrollContentBackground(.hidden)
+                .focused($listFocused)
                 .onKeyPress(.return) {
                     pasteSelected()
                     return .handled
                 }
                 .onKeyPress(.escape) {
+                    listFocused = false
                     searchFocused = true
                     return .handled
                 }
                 .onKeyPress(.upArrow) {
                     if selectedID == allFiltered.first?.id {
+                        listFocused = false
                         searchFocused = true
                         return .handled
                     }
