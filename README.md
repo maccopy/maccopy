@@ -21,7 +21,7 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 ### Option A — Homebrew (recommended)
 
 ```bash
-brew tap maccopy/tap
+brew tap maccopy/homebrew-tap
 brew install --cask maccopy
 ```
 
