@@ -4,8 +4,18 @@ import { useState, useEffect } from "react";
 
 const GITHUB = "https://github.com/FernandoHaeser/macos-clipboard-manager";
 const RELEASES = `${GITHUB}/releases/latest`;
-const VERSION = "1.1.1";
 const BREW_CMD = `brew tap maccopy/homebrew-tap\nbrew install --cask maccopy`;
+
+function useLatestVersion() {
+  const [version, setVersion] = useState("...");
+  useEffect(() => {
+    fetch("https://api.github.com/repos/FernandoHaeser/macos-clipboard-manager/releases/latest")
+      .then((r) => r.json())
+      .then((d) => { if (d.tag_name) setVersion(d.tag_name.replace(/^v/, "")); })
+      .catch(() => setVersion("latest"));
+  }, []);
+  return version;
+}
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
 
@@ -139,7 +149,7 @@ function ThemeToggle() {
   );
 }
 
-function Navbar() {
+function Navbar({ version }: { version: string }) {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -162,7 +172,7 @@ function Navbar() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <a href={RELEASES} target="_blank" rel="noopener" className="btn-primary text-xs px-4 py-2">
-            <IconDownload /> Download v{VERSION}
+            <IconDownload /> Download v{version}
           </a>
         </div>
       </div>
@@ -172,7 +182,7 @@ function Navbar() {
 
 // ── Hero ───────────────────────────────────────────────────────────────────────
 
-function Hero() {
+function Hero({ version }: { version: string }) {
   return (
     <section className="relative overflow-hidden pt-20 pb-28">
       <div className="absolute inset-0 bg-hero-glow pointer-events-none" />
@@ -200,7 +210,7 @@ function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-3 mb-12 animate-fade-up"
              style={{ animationDelay: "0.15s" }}>
           <a href={RELEASES} target="_blank" rel="noopener" className="btn-primary">
-            <IconDownload /> Download v{VERSION}
+            <IconDownload /> Download v{version}
           </a>
           <a href={GITHUB} target="_blank" rel="noopener" className="btn-ghost">
             <IconGitHub /> View on GitHub
@@ -366,7 +376,7 @@ function Features() {
 
 // ── Install ────────────────────────────────────────────────────────────────────
 
-function InstallSection() {
+function InstallSection({ version }: { version: string }) {
   return (
     <section id="install" className="py-24">
       <div className="max-w-6xl mx-auto px-6">
@@ -400,7 +410,7 @@ function InstallSection() {
             <h3 className="font-bold text-gray-900 dark:text-white mb-1">Direct download</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Open the DMG and run the installer package.</p>
             <a href={RELEASES} target="_blank" rel="noopener" className="btn-ghost w-full justify-center text-xs">
-              <IconDownload /> Download v{VERSION} DMG
+              <IconDownload /> Download v{version} DMG
             </a>
           </div>
 
@@ -502,7 +512,7 @@ function OpenSourceCTA() {
 
 // ── Footer ─────────────────────────────────────────────────────────────────────
 
-function Footer() {
+function Footer({ version }: { version: string }) {
   return (
     <footer className="border-t border-gray-100 dark:border-gray-800 py-10">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -511,7 +521,7 @@ function Footer() {
                 style={{ background: "linear-gradient(135deg, #FF6B35, #F05138)" }}>
             <MaccopyLogo className="w-4 h-4" />
           </span>
-          <span>Maccopy v{VERSION}</span>
+          <span>Maccopy v{version}</span>
           <span className="text-gray-300 dark:text-gray-600">·</span>
           <span>MIT License</span>
         </div>
@@ -535,18 +545,19 @@ function Footer() {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const version = useLatestVersion();
   return (
     <>
-      <Navbar />
+      <Navbar version={version} />
       <main>
-        <Hero />
+        <Hero version={version} />
         <AppMockup />
         <Features />
-        <InstallSection />
+        <InstallSection version={version} />
         <PermissionsSection />
         <OpenSourceCTA />
       </main>
-      <Footer />
+      <Footer version={version} />
     </>
   );
 }
