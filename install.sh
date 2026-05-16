@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ╔══════════════════════════════════════════════════════════════╗
-# ║          Clipboard Manager — Installer v3                    ║
+# ║          Maccopy — Installer v3                    ║
 # ║  Downloads pre-built DMG when available, builds from        ║
 # ║  source as fallback. Requires macOS 14+.                    ║
 # ╚══════════════════════════════════════════════════════════════╝
 set -euo pipefail
 
-APP_NAME="ClipboardManager"
-BUNDLE_ID="com.fernandohaeser.clipboardmanager"
+APP_NAME="Maccopy"
+BUNDLE_ID="com.maccopy.maccopy"
 INSTALL_DIR="$HOME/Applications"
 APP_BUNDLE="$INSTALL_DIR/$APP_NAME.app"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$BUNDLE_ID.plist"
@@ -50,7 +50,7 @@ if $BUNDLE_ONLY; then
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key>    <string>$BUNDLE_ID</string>
   <key>CFBundleName</key>          <string>$APP_NAME</string>
-  <key>CFBundleDisplayName</key>   <string>Clipboard Manager</string>
+  <key>CFBundleDisplayName</key>   <string>Maccopy</string>
   <key>CFBundleExecutable</key>    <string>$APP_NAME</string>
   <key>CFBundleVersion</key>       <string>1.0.0</string>
   <key>CFBundleShortVersionString</key> <string>1.0.0</string>
@@ -62,7 +62,7 @@ if $BUNDLE_ONLY; then
   <key>NSAccessibilityUsageDescription</key>
   <string>Needed to simulate ⌘V and paste items into other apps.</string>
   <key>NSAppleEventsUsageDescription</key>
-  <string>Clipboard Manager uses Apple Events to paste clipboard content.</string>
+  <string>Maccopy uses Apple Events to paste clipboard content.</string>
 </dict></plist>
 PLIST
     codesign --force --deep --sign - "$BDST" 2>/dev/null || true
@@ -73,7 +73,7 @@ fi
 clear
 echo
 echo "${BOLD}${CYAN}╔══════════════════════════════════════════╗"
-echo "║      Clipboard Manager  Installer       ║"
+echo "║      Maccopy  Installer       ║"
 echo "╚══════════════════════════════════════════╝${RESET}"
 echo
 
@@ -98,7 +98,7 @@ if command -v curl &>/dev/null; then
         if [[ -n "$PKG_URL" ]]; then
             info "Found pre-built release: ${BOLD}$TAG${RESET}"
             TMPDIR_INST="$(mktemp -d)"
-            PKG_FILE="$TMPDIR_INST/ClipboardManager.pkg"
+            PKG_FILE="$TMPDIR_INST/Maccopy.pkg"
             info "Downloading installer package…"
             if curl -fsSL --progress-bar "$PKG_URL" -o "$PKG_FILE"; then
                 info "Running installer…"
@@ -119,7 +119,7 @@ if command -v curl &>/dev/null; then
         elif [[ -n "$DMG_URL" ]]; then
             info "Found pre-built release: ${BOLD}$TAG${RESET}"
             TMPDIR_INST="$(mktemp -d)"
-            DMG_FILE="$TMPDIR_INST/ClipboardManager.dmg"
+            DMG_FILE="$TMPDIR_INST/Maccopy.dmg"
             info "Downloading DMG…"
             if curl -fsSL --progress-bar "$DMG_URL" -o "$DMG_FILE"; then
                 DOWNLOADED_DMG="$DMG_FILE"
@@ -223,7 +223,7 @@ else
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key>    <string>$BUNDLE_ID</string>
   <key>CFBundleName</key>          <string>$APP_NAME</string>
-  <key>CFBundleDisplayName</key>   <string>Clipboard Manager</string>
+  <key>CFBundleDisplayName</key>   <string>Maccopy</string>
   <key>CFBundleExecutable</key>    <string>$APP_NAME</string>
   <key>CFBundleVersion</key>       <string>1.0.0</string>
   <key>CFBundleShortVersionString</key> <string>1.0.0</string>
@@ -234,7 +234,7 @@ else
   <key>NSAccessibilityUsageDescription</key>
   <string>Needed to simulate ⌘V and paste items into other apps.</string>
   <key>NSAppleEventsUsageDescription</key>
-  <string>Clipboard Manager uses Apple Events to paste clipboard content.</string>
+  <string>Maccopy uses Apple Events to paste clipboard content.</string>
   $ICON_KEY
 </dict></plist>
 PLIST
@@ -270,7 +270,7 @@ ok "LaunchAgent installed (enable auto-login in app Preferences)"
 # ── Step 5: Permissions ───────────────────────────────────────────────────────
 step "Step 5 — Permissions"
 echo
-echo "  Clipboard Manager needs ${BOLD}two permissions${RESET} to work fully:"
+echo "  Maccopy needs ${BOLD}two permissions${RESET} to work fully:"
 echo
 echo "  ${BOLD}1. Accessibility${RESET}       — simulate ⌘V keystroke to paste into apps"
 echo "  ${BOLD}2. Input Monitoring${RESET}    — detect the global hotkey (⌘⇧V)"
@@ -290,11 +290,11 @@ else
 fi
 
 # ── Step 6: Launch ────────────────────────────────────────────────────────────
-step "Step 6 — Launching Clipboard Manager"
+step "Step 6 — Launching Maccopy"
 defaults delete "$BUNDLE_ID" hasCompletedSetup 2>/dev/null || true
 open "$APP_BUNDLE"
 sleep 1.2
-ok "Clipboard Manager launched — Setup Wizard will appear shortly"
+ok "Maccopy launched — Setup Wizard will appear shortly"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo

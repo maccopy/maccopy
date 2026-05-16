@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipboardManager",
+    name: "Maccopy",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "ClipboardManager",
-            path: "Sources/ClipboardManager",
+            name: "Maccopy",
+            path: "Sources/Maccopy",
             linkerSettings: [
                 .linkedFramework("Carbon"),
                 .linkedFramework("ServiceManagement"),

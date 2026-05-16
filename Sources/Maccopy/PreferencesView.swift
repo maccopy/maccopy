@@ -19,7 +19,7 @@ final class PreferencesWindowController {
             backing: .buffered,
             defer: false
         )
-        w.title = "Clipboard Manager — Preferences"
+        w.title = "Maccopy — Preferences"
         w.isReleasedWhenClosed = false
         w.appearance = PreferencesManager.shared.appearanceMode.nsAppearance
         w.center()
@@ -161,7 +161,7 @@ struct PreferencesView: View {
             Section {
                 Toggle("Launch at login", isOn: $prefs.launchAtLogin)
                 Toggle("Sync text history to iCloud Drive", isOn: $prefs.iCloudSyncEnabled)
-                    .help("Writes to ~/iCloud Drive/ClipboardManager/history.json")
+                    .help("Writes to ~/iCloud Drive/Maccopy/history.json")
             } header: {
                 Text("General")
             }

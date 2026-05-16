@@ -23,7 +23,7 @@ final class ClipboardStore: ObservableObject {
     private init() {
         let support = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = support.appendingPathComponent("ClipboardManager", isDirectory: true)
+        let dir = support.appendingPathComponent("Maccopy", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         storageURL = dir.appendingPathComponent("history.json")
         imagesDir = dir.appendingPathComponent("images", isDirectory: true)
@@ -165,7 +165,7 @@ final class ClipboardStore: ObservableObject {
             let iCloudRoot = FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
             guard FileManager.default.fileExists(atPath: iCloudRoot.path) else { return }
-            let syncDir = iCloudRoot.appendingPathComponent("ClipboardManager")
+            let syncDir = iCloudRoot.appendingPathComponent("Maccopy")
             try? FileManager.default.createDirectory(at: syncDir, withIntermediateDirectories: true)
             try? data.write(to: syncDir.appendingPathComponent("history.json"))
         }

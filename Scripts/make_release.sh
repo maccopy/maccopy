@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a release, zip the .app, update the cask formula, and publish to GitHub.
+# Build a release, zip the .app, and publish to GitHub.
 #
 # Usage:
 #   bash Scripts/make_release.sh 1.2.0
@@ -9,13 +9,12 @@
 #   - swift, hdiutil, pkgbuild, productbuild available (Xcode CLT)
 #
 # What it does:
-#   1. Bumps version in UpdateChecker.swift + Info.plist (via make_dmg.sh)
+#   1. Bumps version in UpdateChecker.swift
 #   2. Builds the release binary and .app bundle
-#   3. Creates ClipboardManager-<version>.dmg  (for direct download)
-#   4. Creates ClipboardManager.zip            (for Homebrew cask)
-#   5. Updates Casks/clipboard-manager.rb with new version + sha256
+#   3. Creates Maccopy-<version>.dmg  (for direct download)
+#   4. Creates Maccopy.zip            (for Homebrew cask)
+#   5. Prints sha256 so you can update maccopy/homebrew-tap manually
 #   6. Creates a GitHub draft release with both assets attached
-#   7. Prints next steps (push cask to homebrew-tap repo)
 
 set -euo pipefail
 
@@ -37,23 +36,23 @@ ok()   { echo "  ${GREEN}✓${RESET}  $*"; }
 
 # ── 1. Bump version in source ─────────────────────────────────────────────────
 step "Bumping version to $VERSION"
-CHECKER="Sources/ClipboardManager/UpdateChecker.swift"
+CHECKER="Sources/Maccopy/UpdateChecker.swift"
 sed -i '' "s/static let currentVersion = \"[^\"]*\"/static let currentVersion = \"$VERSION\"/" "$CHECKER"
 ok "UpdateChecker.swift → $VERSION"
 
-# ── 2. Build DMG (also builds .app bundle at .build/bundle/ClipboardManager.app)
+# ── 2. Build DMG ─────────────────────────────────────────────────────────────
 step "Building release"
 RELEASE_VERSION="$VERSION" bash Scripts/make_dmg.sh
-DMG_PATH="$ROOT_DIR/ClipboardManager-${VERSION}.dmg"
+DMG_PATH="$ROOT_DIR/Maccopy-${VERSION}.dmg"
 [[ -f "$DMG_PATH" ]] || { echo "DMG not found: $DMG_PATH" >&2; exit 1; }
 ok "DMG: $(du -sh "$DMG_PATH" | cut -f1)"
 
 # ── 3. Zip the .app for Homebrew ──────────────────────────────────────────────
-step "Creating ClipboardManager.zip"
-ZIP_PATH="$ROOT_DIR/ClipboardManager.zip"
+step "Creating Maccopy.zip"
+ZIP_PATH="$ROOT_DIR/Maccopy.zip"
 rm -f "$ZIP_PATH"
 cd .build/bundle
-zip -r "$ZIP_PATH" ClipboardManager.app --quiet
+zip -r "$ZIP_PATH" Maccopy.app --quiet
 cd "$ROOT_DIR"
 ok "ZIP: $(du -sh "$ZIP_PATH" | cut -f1)"
 
@@ -61,23 +60,14 @@ ok "ZIP: $(du -sh "$ZIP_PATH" | cut -f1)"
 SHA256=$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')
 ok "SHA256: $SHA256"
 
-# ── 5. Update cask formula ────────────────────────────────────────────────────
-step "Updating Casks/clipboard-manager.rb"
-CASK="$ROOT_DIR/Casks/clipboard-manager.rb"
-sed -i '' "s/version \"[^\"]*\"/version \"$VERSION\"/" "$CASK"
-sed -i '' "s/sha256 \"[^\"]*\"/sha256 \"$SHA256\"/" "$CASK"
-ok "Cask updated (version + sha256)"
-
-# ── 6. Commit version bump + cask update ─────────────────────────────────────
-step "Committing release files"
-git add "$CHECKER" "$CASK"
+# ── 5. Commit version bump + tag ─────────────────────────────────────────────
+step "Committing and tagging v$VERSION"
+git add "$CHECKER"
 git commit -m "chore: release v$VERSION" || ok "(nothing new to commit)"
-
-# ── 7. Tag ────────────────────────────────────────────────────────────────────
 git tag -f "v$VERSION"
 ok "Tagged v$VERSION"
 
-# ── 8. GitHub draft release ───────────────────────────────────────────────────
+# ── 6. GitHub draft release ───────────────────────────────────────────────────
 step "Creating GitHub draft release v$VERSION"
 gh release create "v$VERSION" \
     "$ZIP_PATH" \
@@ -85,16 +75,18 @@ gh release create "v$VERSION" \
     --title "v$VERSION" \
     --draft \
     --generate-notes
-ok "Draft release created — review and publish at github.com/FernandoHaeser/macos-clipboard-manager/releases"
+ok "Draft release created"
 
 # ── Next steps ────────────────────────────────────────────────────────────────
 echo
 echo "${BOLD}Next steps:${RESET}"
-echo "  1. Push this repo:            git push && git push --tags"
-echo "  2. Publish the draft release: github.com/FernandoHaeser/macos-clipboard-manager/releases"
-echo "  3. Copy Casks/clipboard-manager.rb to your homebrew-tap repo and push it"
+echo "  1. git push && git push --tags"
+echo "  2. Publish the draft: github.com/FernandoHaeser/macos-clipboard-manager/releases"
+echo "  3. Update maccopy/homebrew-tap Casks/maccopy.rb:"
+echo "       version \"$VERSION\""
+echo "       sha256  \"$SHA256\""
 echo
 echo "  Users install with:"
-echo "    brew tap FernandoHaeser/tap"
-echo "    brew install --cask clipboard-manager"
+echo "    brew tap maccopy/tap"
+echo "    brew install --cask maccopy"
 echo

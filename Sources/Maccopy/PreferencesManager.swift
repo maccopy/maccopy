@@ -232,7 +232,7 @@ final class PreferencesManager: ObservableObject {
     }
 
     private func applyLaunchAtLogin() {
-        let bundleID = "com.fernandohaeser.clipboardmanager"
+        let bundleID = "com.maccopy.maccopy"
         let plistPath = "\(NSHomeDirectory())/Library/LaunchAgents/\(bundleID).plist"
         let cmd =
             launchAtLogin ? "launchctl load -w '\(plistPath)'" : "launchctl unload '\(plistPath)'"

@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem.button else { return }
-        let img = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "Clipboard Manager")
+        let img = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "Maccopy")
         img?.isTemplate = true
         button.image = img
         button.action = #selector(handleStatusClick(_:))
@@ -104,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(clear)
         menu.addItem(.separator())
 
-        menu.addItem(NSMenuItem(title: "Quit Clipboard Manager", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Maccopy", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
         statusItem.button?.performClick(nil)

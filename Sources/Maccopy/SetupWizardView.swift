@@ -21,7 +21,7 @@ final class SetupWizardWindowController {
             backing: .buffered,
             defer: false
         )
-        w.title = "Clipboard Manager Setup"
+        w.title = "Maccopy Setup"
         w.isReleasedWhenClosed = false
         w.center()
         w.contentView = NSHostingView(rootView: SetupWizardView(dismiss: { w.close() }))
@@ -139,7 +139,7 @@ struct SetupWizardView: View {
 
     private var stepHeadline: String {
         switch step {
-        case .welcome: return "Welcome to Clipboard Manager"
+        case .welcome: return "Welcome to Maccopy"
         case .accessibility: return "Grant Accessibility Access"
         case .inputMonitoring: return "Grant Input Monitoring Access"
         case .preferences: return "Customize Your Experience"
@@ -225,7 +225,7 @@ struct SetupWizardView: View {
 
         case .done:
             VStack(spacing: 8) {
-                Text("Clipboard Manager is running in your menu bar.")
+                Text("Maccopy is running in your menu bar.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 16) {

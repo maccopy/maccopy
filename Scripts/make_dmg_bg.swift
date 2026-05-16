@@ -63,7 +63,7 @@ ctx.setLineWidth(0.5)
 ctx.move(to: CGPoint(x: 0, y: H - 72)); ctx.addLine(to: CGPoint(x: W, y: H - 72))
 ctx.strokePath()
 
-drawText("Clipboard Manager", cx: W / 2, cy: 28, size: 20, alpha: 0.88, bold: true)
+drawText("Maccopy", cx: W / 2, cy: 28, size: 20, alpha: 0.88, bold: true)
 drawText("macOS clipboard history — menu bar app", cx: W / 2, cy: 52, size: 12, alpha: 0.40)
 
 // ── Pkg icon placeholder (rounded rect) ──────────────────────────────────────

@@ -1,5 +1,5 @@
 #!/usr/bin/env swift
-// Generates AppIcon.icns for Clipboard Manager using CoreGraphics (no display needed)
+// Generates AppIcon.icns for Maccopy using CoreGraphics (no display needed)
 import AppKit
 import Foundation
 

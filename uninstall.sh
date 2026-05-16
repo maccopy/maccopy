@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# ClipboardManager uninstaller
+# Maccopy uninstaller
 
 set -euo pipefail
 
-APP_NAME="ClipboardManager"
-BUNDLE_ID="com.fernandohaeser.clipboardmanager"
+APP_NAME="Maccopy"
+BUNDLE_ID="com.maccopy.maccopy"
 APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$BUNDLE_ID.plist"
-DATA_DIR="$HOME/Library/Application Support/ClipboardManager"
+DATA_DIR="$HOME/Library/Application Support/Maccopy"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 info() { echo -e "${GREEN}==> ${NC}$*"; }

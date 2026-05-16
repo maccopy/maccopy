@@ -1,4 +1,4 @@
-# Clipboard Manager
+# Maccopy
 
 Native macOS clipboard history — text, images, and files. Lives in the menu bar. Zero dependencies.
 
@@ -32,8 +32,8 @@ Updates via `brew upgrade --cask maccopy`.
 ### Option B — Installer package
 
 1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
-2. Download `ClipboardManager-x.x.x.dmg`
-3. Open the DMG → double-click **Install Clipboard Manager.pkg** → follow the wizard
+2. Download `Maccopy-x.x.x.dmg`
+3. Open the DMG → double-click **Install Maccopy.pkg** → follow the wizard
 
 The installer copies the app to `/Applications`, removes the Gatekeeper quarantine flag, and opens the Setup Wizard automatically.
 
@@ -168,7 +168,7 @@ Build + publish a full GitHub release:
 bash Scripts/make_release.sh 1.2.0
 ```
 
-This builds the DMG, creates `ClipboardManager.zip` for Homebrew, computes the SHA256, updates `Casks/maccopy.rb`, commits, tags, and creates a draft GitHub release.
+This builds the DMG, creates `Maccopy.zip` for Homebrew, computes the SHA256, commits, tags, and creates a draft GitHub release.
 
 ---
 
@@ -198,7 +198,7 @@ Then:
 ```text
 clipboard-manager/
 ├── Package.swift
-├── Sources/ClipboardManager/
+├── Sources/Maccopy/
 │   ├── main.swift                  entry point
 │   ├── AppDelegate.swift           status bar, popover, paste, TCC permissions
 │   ├── ClipboardEntry.swift        model — text / image / file, pin flag, Codable
@@ -239,9 +239,9 @@ ClipboardMonitor.poll()
       └── String     → ClipboardStore.addText(_:)
                               │
                         JSON + images/ saved to
-                        ~/Library/Application Support/ClipboardManager/
+                        ~/Library/Application Support/Maccopy/
                               │ (if iCloud sync on)
-                        ~/iCloud Drive/ClipboardManager/history.json
+                        ~/iCloud Drive/Maccopy/history.json
 
 User picks an item → ↵ Enter / double-click / ⌘1-9
       │

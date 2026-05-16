@@ -95,7 +95,7 @@ final class UpdateChecker: ObservableObject {
         do {
             var req = URLRequest(url: Self.apiURL, timeoutInterval: 10)
             req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            req.setValue("ClipboardManager/\(Self.currentVersion)", forHTTPHeaderField: "User-Agent")
+            req.setValue("Maccopy/\(Self.currentVersion)", forHTTPHeaderField: "User-Agent")
             let (data, _) = try await URLSession.shared.data(for: req)
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             lastChecked = Date()
@@ -149,10 +149,10 @@ final class UpdateChecker: ObservableObject {
 
                 await MainActor.run { self.downloadProgress = 0.8 }
 
-                let appSrc = extractDir.appendingPathComponent("ClipboardManager.app")
+                let appSrc = extractDir.appendingPathComponent("Maccopy.app")
                 guard FileManager.default.fileExists(atPath: appSrc.path) else {
                     throw NSError(domain: "UpdateChecker", code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: "ClipboardManager.app not found in archive"])
+                        userInfo: [NSLocalizedDescriptionKey: "Maccopy.app not found in archive"])
                 }
 
                 let currentApp = Bundle.main.bundleURL.path
