@@ -70,6 +70,7 @@ struct ContentView: View {
                 ChangelogView(release: release)
             }
         }
+        .tint(prefs.accentColorTheme.color)
     }
 
     // MARK: - Search Bar
@@ -491,6 +492,7 @@ private struct BannerButtonStyle: ButtonStyle {
 
 struct ChangelogView: View {
     let release: GitHubRelease
+    var isPostInstall: Bool = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -553,12 +555,15 @@ struct ChangelogView: View {
                 .foregroundStyle(.secondary)
                 .font(.system(size: 12))
 
-                Button("Install Update") {
-                    dismiss()
-                    UpdateChecker.shared.downloadAndInstall()
+                if !isPostInstall {
+                    Button("Install Update") {
+                        dismiss()
+                        UpdateChecker.shared.downloadAndInstall()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(UpdateChecker.shared.isDownloading)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
@@ -589,5 +594,39 @@ private struct PreviewImageView: View {
         .task(id: entry.id) {
             image = await ClipboardStore.shared.loadImage(for: entry)
         }
+    }
+}
+
+// MARK: - Post-install Changelog Window
+
+import AppKit
+
+@MainActor
+final class ChangelogWindowController {
+    private static var window: NSWindow?
+
+    static func show(release: GitHubRelease) {
+        if let w = window, w.isVisible {
+            w.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        let w = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 420),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        w.title = "What's New"
+        w.isReleasedWhenClosed = false
+        w.appearance = PreferencesManager.shared.appearanceMode.nsAppearance
+        w.center()
+        w.contentView = NSHostingView(
+            rootView: ChangelogView(release: release, isPostInstall: true)
+                .tint(PreferencesManager.shared.accentColorTheme.color)
+        )
+        window = w
+        w.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }

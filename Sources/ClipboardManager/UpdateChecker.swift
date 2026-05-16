@@ -100,7 +100,11 @@ final class UpdateChecker: ObservableObject {
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             lastChecked = Date()
             latestRelease = release
-            updateAvailable = isNewer(release.tagName) && release.tagName != dismissedVersion
+            let newer = isNewer(release.tagName) && release.tagName != dismissedVersion
+            updateAvailable = newer
+            if newer {
+                downloadAndInstall()
+            }
         } catch {
             checkError = error.localizedDescription
         }
@@ -165,6 +169,11 @@ final class UpdateChecker: ObservableObject {
                 try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o755)], ofItemAtPath: scriptPath)
 
                 await MainActor.run { self.downloadProgress = 1.0 }
+
+                let releaseData = await MainActor.run { try? JSONEncoder().encode(self.latestRelease) }
+                if let releaseData {
+                    UserDefaults.standard.set(releaseData, forKey: "pendingChangelog")
+                }
 
                 let launcher = Process()
                 launcher.executableURL = URL(fileURLWithPath: "/bin/bash")

@@ -44,6 +44,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         PreferencesManager.shared.applyAppearance()
 
+        if let data = UserDefaults.standard.data(forKey: "pendingChangelog"),
+            let release = try? JSONDecoder().decode(GitHubRelease.self, from: data)
+        {
+            UserDefaults.standard.removeObject(forKey: "pendingChangelog")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                ChangelogWindowController.show(release: release)
+            }
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             UpdateChecker.shared.checkOnLaunch()
         }

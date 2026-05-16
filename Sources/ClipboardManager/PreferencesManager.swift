@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import Foundation
+import SwiftUI
 
 struct KeyCombo: Codable, Equatable {
     var keyCode: UInt32
@@ -51,6 +52,38 @@ enum AppearanceMode: String, Codable, CaseIterable {
         case .system: return nil
         case .light: return NSAppearance(named: .aqua)
         case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
+enum AccentColorTheme: String, Codable, CaseIterable {
+    case blue, purple, indigo, pink, orange, mint, teal, green, red
+
+    var displayName: String {
+        switch self {
+        case .blue: return "Blue"
+        case .purple: return "Purple"
+        case .indigo: return "Indigo"
+        case .pink: return "Pink"
+        case .orange: return "Orange"
+        case .mint: return "Mint"
+        case .teal: return "Teal"
+        case .green: return "Green"
+        case .red: return "Red"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .blue: return .blue
+        case .purple: return .purple
+        case .indigo: return .indigo
+        case .pink: return .pink
+        case .orange: return .orange
+        case .mint: return .mint
+        case .teal: return .teal
+        case .green: return .green
+        case .red: return .red
         }
     }
 }
@@ -115,6 +148,7 @@ final class PreferencesManager: ObservableObject {
 
     @Published var useGlassEffect: Bool { didSet { save() } }
     @Published var overlayOpacity: Double { didSet { save() } }
+    @Published var accentColorTheme: AccentColorTheme { didSet { save() } }
 
     // Updates
     @Published var autoCheckUpdates: Bool { didSet { save() } }
@@ -158,6 +192,14 @@ final class PreferencesManager: ObservableObject {
         let opacity = defaults.double(forKey: "overlayOpacity")
         overlayOpacity = opacity > 0 ? opacity : 0.95
 
+        if let raw = defaults.string(forKey: "accentColorTheme"),
+            let theme = AccentColorTheme(rawValue: raw)
+        {
+            accentColorTheme = theme
+        } else {
+            accentColorTheme = .blue
+        }
+
         // Updates
         autoCheckUpdates = defaults.object(forKey: "autoCheckUpdates") as? Bool ?? true
     }
@@ -178,11 +220,15 @@ final class PreferencesManager: ObservableObject {
         defaults.set(popoverWidth, forKey: "popoverWidth")
         defaults.set(useGlassEffect, forKey: "useGlassEffect")
         defaults.set(overlayOpacity, forKey: "overlayOpacity")
+        defaults.set(accentColorTheme.rawValue, forKey: "accentColorTheme")
         defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates")
     }
 
     func applyAppearance() {
         NSApp.appearance = appearanceMode.nsAppearance
+        for window in NSApp.windows {
+            window.appearance = appearanceMode.nsAppearance
+        }
     }
 
     private func applyLaunchAtLogin() {

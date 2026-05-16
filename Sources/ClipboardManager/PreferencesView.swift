@@ -14,13 +14,14 @@ final class PreferencesWindowController {
             return
         }
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 600),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         w.title = "Clipboard Manager — Preferences"
         w.isReleasedWhenClosed = false
+        w.appearance = PreferencesManager.shared.appearanceMode.nsAppearance
         w.center()
         w.contentView = NSHostingView(rootView: PreferencesView())
         window = w
@@ -128,6 +129,27 @@ struct PreferencesView: View {
                             .frame(width: 40, alignment: .leading)
                     }
                 }
+                LabeledContent("Accent color") {
+                    HStack(spacing: 6) {
+                        ForEach(AccentColorTheme.allCases, id: \.self) { theme in
+                            Button {
+                                prefs.accentColorTheme = theme
+                            } label: {
+                                Circle()
+                                    .fill(theme.color)
+                                    .frame(width: 18, height: 18)
+                                    .overlay(
+                                        Circle()
+                                            .strokeBorder(Color.primary.opacity(prefs.accentColorTheme == theme ? 0.6 : 0), lineWidth: 2)
+                                            .padding(-3)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .help(theme.displayName)
+                        }
+                    }
+                }
+
                 Toggle("Show type icon", isOn: $prefs.showTypeIcon)
                 Toggle("Show timestamps", isOn: $prefs.showTimestamps)
                 Toggle("Show character count", isOn: $prefs.showCharCount)
@@ -274,7 +296,8 @@ struct PreferencesView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 560)
+        .frame(width: 520, height: 600)
+        .tint(prefs.accentColorTheme.color)
         .sheet(isPresented: $updater.showChangelog) {
             if let release = updater.latestRelease {
                 ChangelogView(release: release)
