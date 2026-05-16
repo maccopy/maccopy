@@ -11,6 +11,9 @@ struct ContentView: View {
     private var pinned: [ClipboardEntry] { store.filtered.filter { $0.isPinned } }
     private var unpinned: [ClipboardEntry] { store.filtered.filter { !$0.isPinned } }
     private var allFiltered: [ClipboardEntry] { store.filtered }
+    private var selectedEntry: ClipboardEntry? {
+        selectedID.flatMap { id in allFiltered.first { $0.id == id } }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +23,14 @@ struct ContentView: View {
             }
             Divider().opacity(0.3)
             itemList
+            if let entry = selectedEntry, shouldShowPreview(entry) {
+                Divider().opacity(0.3)
+                previewPane(entry)
+                    .transition(.asymmetric(
+                        insertion: .push(from: .bottom).combined(with: .opacity),
+                        removal: .push(from: .top).combined(with: .opacity)
+                    ))
+            }
             Divider().opacity(0.3)
             footer
         }
@@ -382,6 +393,75 @@ struct ContentView: View {
                 .allowsHitTesting(false)
         }
     }
+
+    private func shouldShowPreview(_ entry: ClipboardEntry) -> Bool {
+        switch entry.type {
+        case .text: return (entry.text?.count ?? 0) > 60
+        case .image: return true
+        case .file: return true
+        }
+    }
+
+    @ViewBuilder
+    private func previewPane(_ entry: ClipboardEntry) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                switch entry.type {
+                case .text:
+                    ScrollView(.vertical, showsIndicators: false) {
+                        Text(entry.text ?? "")
+                            .font(.system(size: 11, design: entry.isURL ? .default : .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                    }
+
+                case .image:
+                    PreviewImageView(entry: entry)
+                        .frame(maxWidth: .infinity)
+                        .padding(6)
+
+                case .file:
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(entry.fileName ?? "File", systemImage: "doc.fill")
+                            .font(.system(size: 12, weight: .medium))
+                        if let url = entry.fileURL {
+                            Text(url.path)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(2)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxHeight: 110)
+
+            Button {
+                if let text = entry.text {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(text, forType: .string)
+                }
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .padding(5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.primary.opacity(0.07))
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(6)
+            .opacity(entry.type == .text ? 1 : 0)
+        }
+        .background(Color.primary.opacity(0.025))
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: selectedID)
+    }
 }
 
 // MARK: - Banner Button Style
@@ -476,5 +556,30 @@ struct ChangelogView: View {
             .padding(.vertical, 14)
         }
         .frame(width: 500, height: 420)
+    }
+}
+
+// MARK: - Preview Image View
+
+private struct PreviewImageView: View {
+    let entry: ClipboardEntry
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let img = image {
+                Image(nsImage: img)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            } else {
+                Image(systemName: "photo")
+                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 24))
+            }
+        }
+        .task(id: entry.id) {
+            image = await ClipboardStore.shared.loadImage(for: entry)
+        }
     }
 }
