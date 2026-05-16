@@ -133,22 +133,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Paste
 
     private func performPaste(_ entry: ClipboardEntry) {
+        if entry.type == .image {
+            Task {
+                let pb = NSPasteboard.general
+                pb.clearContents()
+                if let image = await ClipboardStore.shared.loadImage(for: entry) {
+                    pb.writeObjects([image])
+                }
+                await MainActor.run { triggerPaste() }
+            }
+            return
+        }
+
         let pb = NSPasteboard.general
         pb.clearContents()
-
         switch entry.type {
         case .text:
             if let text = entry.text { pb.setString(text, forType: .string) }
-        case .image:
-            if let image = ClipboardStore.shared.loadImage(for: entry) {
-                pb.writeObjects([image])
-            }
         case .file:
             if let url = entry.fileURL { pb.writeObjects([url as NSURL]) }
+        case .image:
+            break
         }
+        triggerPaste()
+    }
 
+    private func triggerPaste() {
         popover.close()
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             guard
                 let src = CGEventSource(stateID: .hidSystemState),

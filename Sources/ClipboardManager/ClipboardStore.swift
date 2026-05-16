@@ -130,16 +130,22 @@ final class ClipboardStore: ObservableObject {
 
     // MARK: - Image loading
 
-    func loadImage(for entry: ClipboardEntry) -> NSImage? {
+    func loadImage(for entry: ClipboardEntry) async -> NSImage? {
         guard entry.type == .image, let fn = entry.imageFileName else { return nil }
-        return NSImage(contentsOf: imagesDir.appendingPathComponent(fn))
+        let url = imagesDir.appendingPathComponent(fn)
+        return await Task.detached(priority: .userInitiated) {
+            NSImage(contentsOf: url)
+        }.value
     }
 
     // MARK: - Persistence
 
     private func save() {
         guard let data = try? JSONEncoder().encode(entries) else { return }
-        try? data.write(to: storageURL)
+        let url = storageURL
+        Task.detached(priority: .utility) {
+            try? data.write(to: url)
+        }
     }
 
     private func load() {
@@ -153,13 +159,14 @@ final class ClipboardStore: ObservableObject {
 
     private func syncToiCloud() {
         guard PreferencesManager.shared.iCloudSyncEnabled else { return }
-        let iCloudRoot = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
-        guard FileManager.default.fileExists(atPath: iCloudRoot.path) else { return }
-        let syncDir = iCloudRoot.appendingPathComponent("ClipboardManager")
-        try? FileManager.default.createDirectory(at: syncDir, withIntermediateDirectories: true)
         let syncable = entries.filter { $0.type == .text }
-        if let data = try? JSONEncoder().encode(syncable) {
+        guard let data = try? JSONEncoder().encode(syncable) else { return }
+        Task.detached(priority: .background) {
+            let iCloudRoot = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+            guard FileManager.default.fileExists(atPath: iCloudRoot.path) else { return }
+            let syncDir = iCloudRoot.appendingPathComponent("ClipboardManager")
+            try? FileManager.default.createDirectory(at: syncDir, withIntermediateDirectories: true)
             try? data.write(to: syncDir.appendingPathComponent("history.json"))
         }
     }

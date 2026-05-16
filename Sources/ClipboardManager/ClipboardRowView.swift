@@ -44,7 +44,7 @@ struct ClipboardRowView: View {
         .animation(.easeInOut(duration: 0.1), value: isSelected)
         .task(id: entry.id) {
             if entry.type == .image {
-                thumbnailImage = ClipboardStore.shared.loadImage(for: entry)
+                thumbnailImage = await ClipboardStore.shared.loadImage(for: entry)
             }
         }
         .task(id: entry.linkPreview?.faviconURL) {
