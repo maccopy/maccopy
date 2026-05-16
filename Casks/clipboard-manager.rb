@@ -1,5 +1,5 @@
 cask "clipboard-manager" do
-  version "1.1.0"
+  version "1.1.1"
   sha256 "PLACEHOLDER"
 
   url "https://github.com/FernandoHaeser/macos-clipboard-manager/releases/download/v#{version}/ClipboardManager.zip"
