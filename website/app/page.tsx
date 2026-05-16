@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 
-const GITHUB = "https://github.com/FernandoHaeser/macos-clipboard-manager";
+const GITHUB = "https://github.com/FernandoHaeser/maccopy";
 const RELEASES = `${GITHUB}/releases/latest`;
 const BREW_CMD = `brew tap maccopy/homebrew-tap\nbrew install --cask maccopy`;
 
 function useLatestVersion() {
   const [version, setVersion] = useState("...");
   useEffect(() => {
-    fetch("https://api.github.com/repos/FernandoHaeser/macos-clipboard-manager/releases/latest")
+    fetch("https://api.github.com/repos/FernandoHaeser/maccopy/releases/latest")
       .then((r) => r.json())
       .then((d) => { if (d.tag_name) setVersion(d.tag_name.replace(/^v/, "")); })
       .catch(() => setVersion("latest"));
@@ -422,7 +422,7 @@ function InstallSection({ version }: { version: string }) {
             <div className="code-block text-xs">
               <div className="flex gap-2 items-start">
                 <span className="text-swift-coral shrink-0">$</span>
-                <span className="break-all">curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash</span>
+                <span className="break-all">curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/maccopy/main/install.sh | bash</span>
               </div>
             </div>
           </div>

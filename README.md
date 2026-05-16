@@ -31,7 +31,7 @@ Updates via `brew upgrade --cask maccopy`.
 
 ### Option B — Installer package
 
-1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
+1. Go to [**Releases**](https://github.com/FernandoHaeser/maccopy/releases/latest)
 2. Download `Maccopy-x.x.x.dmg`
 3. Open the DMG → double-click **Install Maccopy.pkg** → follow the wizard
 
@@ -44,7 +44,7 @@ The installer copies the app to `/Applications`, removes the Gatekeeper quaranti
 ### Option C — One-liner (builds from source or downloads pre-built)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/maccopy/main/install.sh | bash
 ```
 
 Tries to download a pre-built binary first. Falls back to building from source (requires Xcode Command Line Tools).
@@ -141,7 +141,7 @@ brew uninstall --cask maccopy
 Or one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/maccopy/main/uninstall.sh | bash
 ```
 
 ---
@@ -149,8 +149,8 @@ curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-mana
 ## Build from source
 
 ```bash
-git clone https://github.com/FernandoHaeser/macos-clipboard-manager.git
-cd macos-clipboard-manager
+git clone https://github.com/FernandoHaeser/maccopy.git
+cd maccopy
 bash install.sh          # full install
 # or
 ./run.sh                 # quick dev run (no .app bundle)

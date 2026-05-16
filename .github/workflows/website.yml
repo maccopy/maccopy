@@ -37,7 +37,7 @@ jobs:
         run: npm run build
         working-directory: website
         env:
-          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_BASE_PATH: "/maccopy"
 
       - uses: actions/upload-pages-artifact@v3
         with:

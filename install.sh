@@ -11,7 +11,7 @@ BUNDLE_ID="com.maccopy.maccopy"
 INSTALL_DIR="$HOME/Applications"
 APP_BUNDLE="$INSTALL_DIR/$APP_NAME.app"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$BUNDLE_ID.plist"
-GITHUB_REPO="FernandoHaeser/macos-clipboard-manager"
+GITHUB_REPO="FernandoHaeser/maccopy"
 GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
 
 # ── Colours ───────────────────────────────────────────────────────────────────
