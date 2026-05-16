@@ -180,6 +180,10 @@ struct ContentView: View {
                     return .handled
                 }
                 .onKeyPress(.upArrow) {
+                    if selectedID == allFiltered.first?.id {
+                        searchFocused = true
+                        return .handled
+                    }
                     moveSelection(by: -1)
                     return .handled
                 }
