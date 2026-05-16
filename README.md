@@ -6,15 +6,11 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
 ## Screenshots
 
-
 <img width="501" height="282" alt="image" src="https://github.com/user-attachments/assets/7fb21481-5b50-47f9-ac01-df8d8fc0cfc8" />
-
 
 <img width="500" height="282" alt="image" src="https://github.com/user-attachments/assets/4f094505-ff88-4c07-b5dc-962679239276" />
 
-
 <img width="501" height="284" alt="image" src="https://github.com/user-attachments/assets/0212f6ae-cde6-4fa8-8f4e-3ca8c1ef9d2b" />
-
 
 <img width="501" height="282" alt="image" src="https://github.com/user-attachments/assets/d2e6e00d-f52f-41c1-add6-3c763f84e17e" />
 
@@ -22,25 +18,36 @@ Built with **Swift + AppKit + SwiftUI**. Requires macOS 14 Sonoma or later.
 
 ## Install
 
-### Option A — Installer package (recommended, no Xcode needed)
+### Option A — Homebrew (recommended)
 
-1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
-2. Download `ClipboardManager-x.x.x.pkg` **or** the `.dmg` (contains the same `.pkg` inside)
-3. Double-click the `.pkg` → follow the installer wizard → done
+```bash
+brew tap maccopy/tap
+brew install --cask maccopy
+```
 
-The installer handles everything: copies the app to `/Applications`, removes the Gatekeeper quarantine flag, and opens the Setup Wizard automatically.
-
-> **macOS may warn** "Apple cannot verify the developer." To proceed: open **System Settings → Privacy & Security**, scroll down, and click **"Open Anyway"** next to ClipboardManager. This is a one-time step for unsigned apps.
+Updates via `brew upgrade --cask maccopy`.
 
 ---
 
-### Option B — One-liner installer (builds from source or downloads pre-built)
+### Option B — Installer package
+
+1. Go to [**Releases**](https://github.com/FernandoHaeser/macos-clipboard-manager/releases/latest)
+2. Download `ClipboardManager-x.x.x.dmg`
+3. Open the DMG → double-click **Install Clipboard Manager.pkg** → follow the wizard
+
+The installer copies the app to `/Applications`, removes the Gatekeeper quarantine flag, and opens the Setup Wizard automatically.
+
+> **macOS may warn** "Apple cannot verify the developer." Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**. One-time step for unsigned apps.
+
+---
+
+### Option C — One-liner (builds from source or downloads pre-built)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/install.sh | bash
 ```
 
-The installer automatically tries to download a pre-built binary from the latest release. If unavailable, it builds from source (requires Xcode Command Line Tools).
+Tries to download a pre-built binary first. Falls back to building from source (requires Xcode Command Line Tools).
 
 ---
 
@@ -49,16 +56,19 @@ The installer automatically tries to download a pre-built binary from the latest
 | | Feature | Details |
 | --- | --- | --- |
 | 📋 | **Clipboard history** | Text, images, and files — up to 1000 items |
-| 🖼 | **Image thumbnails** | Inline previews for copied images |
-| 📁 | **File tracking** | File name + size for copied files |
+| 🖼 | **Image thumbnails** | Inline previews + expanded preview pane |
+| 📁 | **File tracking** | File name, extension badge, and size |
+| 🔗 | **Link previews** | Favicon + page title for copied URLs |
 | 📌 | **Pin / favourite** | Pinned items stay at the top permanently |
-| ⌨️ | **Keyboard navigation** | Arrow keys, Enter to paste, Escape to close |
+| ⌨️ | **Keyboard navigation** | Arrow keys, ↵ to paste, ⌘1–9 quick paste |
 | 🔍 | **Live search** | Instant filter across all item types |
-| 🎨 | **Appearance** | Glass/blur toggle, theme (system/light/dark), row density, font size |
-| 🔔 | **Auto-updates** | Checks GitHub Releases, shows in-app changelog |
-| ☁️ | **iCloud sync** | Syncs text history across Macs |
+| 🎨 | **Accent colors** | 9 color themes: Blue, Purple, Indigo, Pink, Orange, Mint, Teal, Green, Red |
+| 🌗 | **Appearance** | System / Light / Dark theme, glass/blur toggle, overlay opacity, row density |
+| 🖱 | **Right-click menu** | Context menu on every row: Paste, Copy, Pin, Delete |
+| 🔔 | **Auto-updates** | Detects + installs updates automatically; shows changelog popup after relaunch |
+| ☁️ | **iCloud sync** | Syncs text history to iCloud Drive |
 | ⚙️ | **Preferences** | Hotkey, history limit, appearance, update settings |
-| 🧙 | **Setup Wizard** | 5-step onboarding for permissions & first-time config |
+| 🧙 | **Setup Wizard** | 5-step onboarding for permissions and first-time config |
 
 ---
 
@@ -68,13 +78,38 @@ The installer automatically tries to download a pre-built binary from the latest
 | --- | --- |
 | Open history | **⌘⇧V** from any app, or click the menu bar icon |
 | Navigate list | **↑ / ↓** arrow keys |
-| Paste item | **Enter** (selected) or **double-click** any row |
+| Paste item | **↵ Enter** (selected) or **double-click** any row |
+| Quick paste | **⌘1** through **⌘9** — pastes first 9 items instantly |
 | Search | Type in the search bar — filters all types live |
-| Pin item | Hover → **pin** button (orange) |
-| Delete item | Hover → **trash** button |
-| Clear all | Footer → **Clear**, or right-click icon → Clear History |
+| Pin item | Hover → pin button, or right-click → Pin |
+| Delete item | Hover → trash button, or right-click → Delete |
+| Preview item | Select any item — preview pane expands below the list |
+| Clear all | Footer → **Clear** (asks for confirmation) |
 | Preferences | Footer → **Preferences**, or right-click icon → Preferences… |
 | Quit | Right-click icon → Quit |
+
+---
+
+## Preferences
+
+Open via footer → **Preferences** or right-click the menu bar icon → **Preferences…**
+
+| Setting | Description |
+| --- | --- |
+| **Global Hotkey** | Change via Setup Wizard |
+| **Maximum items** | 10–1000 (default 50) |
+| **Theme** | System / Light / Dark |
+| **Row density** | Compact / Comfortable / Spacious |
+| **Popover width** | 360–600 px |
+| **Glass / blur effect** | NSVisualEffect material background |
+| **Overlay opacity** | 40–100% |
+| **Accent color** | 9 color choices |
+| **Show type icon** | Icon badge per item type |
+| **Show timestamps** | Relative time on each row |
+| **Show character count** | Char count / domain for URLs |
+| **Launch at login** | LaunchAgent toggle |
+| **iCloud sync** | Writes text history to iCloud Drive |
+| **Auto-check updates** | Checks GitHub Releases on launch (once per day) |
 
 ---
 
@@ -97,7 +132,13 @@ Grant via **System Settings → Privacy & Security** if the wizard dialogs are d
 bash uninstall.sh
 ```
 
-Or:
+Or via Homebrew:
+
+```bash
+brew uninstall --cask maccopy
+```
+
+Or one-liner:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/FernandoHaeser/macos-clipboard-manager/main/uninstall.sh | bash
@@ -115,27 +156,40 @@ bash install.sh          # full install
 ./run.sh                 # quick dev run (no .app bundle)
 ```
 
-To build a DMG locally:
+Build a release DMG:
 
 ```bash
-bash Scripts/make_dmg.sh
+RELEASE_VERSION=1.1.1 bash Scripts/make_dmg.sh
 ```
+
+Build + publish a full GitHub release:
+
+```bash
+bash Scripts/make_release.sh 1.2.0
+```
+
+This builds the DMG, creates `ClipboardManager.zip` for Homebrew, computes the SHA256, updates `Casks/maccopy.rb`, commits, tags, and creates a draft GitHub release.
 
 ---
 
 ## Requirements
 
 - macOS 14 Sonoma or later
-- **DMG install:** no additional requirements
+- **Homebrew / DMG install:** no additional requirements
 - **Build from source:** Xcode Command Line Tools (`xcode-select --install`)
 
 ---
 
 ## Releasing a new version
 
-1. Update `static let currentVersion` in `UpdateChecker.swift`
-2. Commit and tag: `git tag v1.2.3 && git push origin v1.2.3`
-3. GitHub Actions builds the DMG automatically and attaches it to the release
+```bash
+bash Scripts/make_release.sh 1.2.0
+```
+
+Then:
+1. `git push && git push --tags`
+2. Publish the draft release on GitHub
+3. Copy `Casks/maccopy.rb` to the [maccopy/homebrew-tap](https://github.com/maccopy/homebrew-tap) repo and push
 
 ---
 
@@ -151,20 +205,22 @@ clipboard-manager/
 │   ├── ClipboardStore.swift        history — add, delete, pin, trim, iCloud sync
 │   ├── ClipboardMonitor.swift      NSPasteboard polling
 │   ├── HotkeyManager.swift         Carbon RegisterEventHotKey
-│   ├── PreferencesManager.swift    UserDefaults-backed settings
+│   ├── PreferencesManager.swift    UserDefaults-backed settings + AccentColorTheme
 │   ├── PermissionRequester.swift   Accessibility + Input Monitoring TCC
-│   ├── PopoverController.swift     NSPopover lifecycle
-│   ├── UpdateChecker.swift         GitHub Releases API — version check + changelog
-│   ├── ContentView.swift           SwiftUI root — search, list, update banner
-│   ├── ClipboardRowView.swift      row — preview, thumbnail, action buttons
+│   ├── PopoverController.swift     NSPopover lifecycle + window transparency
+│   ├── UpdateChecker.swift         GitHub Releases API — auto-update + changelog
+│   ├── ContentView.swift           SwiftUI root — search, list, preview, update banner
+│   ├── ClipboardRowView.swift      row — preview, thumbnail, action buttons, context menu
+│   ├── LinkPreviewFetcher.swift    async URL metadata + favicon fetcher
 │   ├── SetupWizardView.swift       5-step onboarding
 │   ├── PreferencesView.swift       preferences window — appearance, updates, permissions
 │   └── Extensions.swift            NSImage resize + PNG export
 ├── Scripts/
 │   ├── make_icon.swift             CoreGraphics icon renderer → AppIcon.icns
-│   └── make_dmg.sh                 creates drag-to-install DMG
-├── .github/workflows/
-│   └── release.yml                 builds + publishes DMG on new version tags
+│   ├── make_dmg.sh                 builds .app + .pkg + DMG
+│   └── make_release.sh             full release: build → zip → sha256 → gh release
+├── Casks/
+│   └── maccopy.rb                  Homebrew cask formula (copy to maccopy/homebrew-tap)
 ├── install.sh                      downloads pre-built or builds from source
 ├── uninstall.sh
 └── run.sh
@@ -187,11 +243,21 @@ ClipboardMonitor.poll()
                               │ (if iCloud sync on)
                         ~/iCloud Drive/ClipboardManager/history.json
 
-User picks an item → Enter / double-click
+User picks an item → ↵ Enter / double-click / ⌘1-9
       │
 AppDelegate.performPaste(_:)
       ├── NSPasteboard.clearContents()
       ├── write text / image / URL back to pasteboard
       ├── popover.close()   ← previous app regains focus
       └── 150 ms later: CGEvent(V, .maskCommand) → cghidEventTap
+
+Update check (on launch, once per day)
+      │
+UpdateChecker.check()
+      ├── fetches GitHub Releases API
+      ├── compares semver tags
+      └── if newer: auto-downloads ZIP → extracts → shell script replaces .app → relaunch
+                              │
+                        on next launch: reads UserDefaults("pendingChangelog")
+                              └── shows Changelog window with release notes
 ```
