@@ -30,18 +30,23 @@ struct ClipboardRowView: View {
             Spacer(minLength: 4)
             if isHovered || isSelected {
                 actionButtons
-                    .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: .trailing)))
+                    .transition(
+                        .asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.85, anchor: .trailing)),
+                            removal: .opacity.combined(with: .scale(scale: 0.9, anchor: .trailing))
+                        )
+                    )
             }
         }
         .padding(.vertical, vPad)
         .padding(.horizontal, 10)
         .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2, perform: onPaste)
-        .animation(.easeInOut(duration: 0.1), value: isHovered)
-        .animation(.easeInOut(duration: 0.1), value: isSelected)
+        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isHovered)
+        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isSelected)
         .task(id: entry.id) {
             if entry.type == .image {
                 thumbnailImage = ClipboardStore.shared.loadImage(for: entry)
@@ -210,21 +215,21 @@ struct ClipboardRowView: View {
     }
 
     private var metaRow: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 4) {
             if entry.isPinned {
                 Image(systemName: "pin.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.orange)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.orange.opacity(0.8))
             }
             if prefs.showTimestamps {
                 Text(timeAgo)
             }
             if let meta = metaLabel, prefs.showCharCount {
-                Text("·")
+                Text("·").foregroundStyle(.quaternary)
                 Text(meta)
             }
         }
-        .font(.system(size: 10))
+        .font(.system(size: 10, weight: .medium, design: .rounded))
         .foregroundStyle(.tertiary)
     }
 
@@ -249,16 +254,18 @@ struct ClipboardRowView: View {
     // MARK: - Row Background
 
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: 10)
             .fill(
                 isSelected
-                    ? Color.accentColor.opacity(0.12)
-                    : isHovered ? Color.primary.opacity(0.05) : Color.clear
+                    ? Color.accentColor.opacity(0.15)
+                    : isHovered ? Color.primary.opacity(0.06) : Color.clear
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(
-                        isSelected ? Color.accentColor.opacity(0.25) : Color.clear,
+                        isSelected
+                            ? Color.accentColor.opacity(0.4)
+                            : isHovered ? Color.primary.opacity(0.06) : Color.clear,
                         lineWidth: 1
                     )
             )
@@ -311,14 +318,14 @@ private struct PillButtonStyle: ButtonStyle {
     let tint: Color
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 5)
-                    .fill(tint.opacity(configuration.isPressed ? 0.25 : 0.11))
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(tint.opacity(configuration.isPressed ? 0.28 : 0.13))
             )
             .foregroundStyle(tint)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.93 : 1)
+            .animation(.spring(response: 0.15, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
