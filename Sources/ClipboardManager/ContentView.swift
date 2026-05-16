@@ -178,6 +178,13 @@ struct ContentView: View {
                     searchFocused = true
                     return .handled
                 }
+                .onKeyPress(.upArrow) {
+                    if selectedID == allFiltered.first?.id {
+                        searchFocused = true
+                        return .handled
+                    }
+                    return .ignored
+                }
                 .onChange(of: selectedID) {
                     if let id = selectedID { withAnimation { proxy.scrollTo(id, anchor: .center) } }
                 }
