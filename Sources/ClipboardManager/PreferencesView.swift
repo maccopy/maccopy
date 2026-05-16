@@ -192,11 +192,24 @@ struct PreferencesView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
-                        Button("Download") {
-                            updater.openReleasePage()
+                        if updater.isDownloading {
+                            HStack(spacing: 5) {
+                                ProgressView(value: updater.downloadProgress)
+                                    .progressViewStyle(.linear)
+                                    .frame(width: 70)
+                                Text("\(Int(updater.downloadProgress * 100))%")
+                                    .font(.system(size: 10))
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Button("Install Update") {
+                                updater.downloadAndInstall()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .disabled(updater.isDownloading)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
                     } else {
                         Button("Check Now") {
                             Task { await updater.check() }
@@ -237,16 +250,10 @@ struct PreferencesView: View {
                         check: { PermissionRequester.inputMonitoringGranted },
                         label: "Input Monitoring"
                     )
-                    Button(PermissionRequester.inputMonitoringGranted ? "Settings" : "Request") {
-                        if PermissionRequester.inputMonitoringGranted {
-                            NSWorkspace.shared.open(
-                                URL(
-                                    string:
-                                        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
-                                )!)
-                        } else {
-                            PermissionRequester.requestInputMonitoring()
-                        }
+                    Button("Open Settings") {
+                        NSWorkspace.shared.open(
+                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!
+                        )
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
