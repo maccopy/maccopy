@@ -29,35 +29,35 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           sed -i '' \
             "s/static let currentVersion = \".*\"/static let currentVersion = \"$VERSION\"/" \
-            Sources/ClipboardManager/UpdateChecker.swift
+            Sources/Maccopy/UpdateChecker.swift
 
       - name: Build DMG
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           bash Scripts/make_dmg.sh .
-          echo "DMG: $(du -sh ClipboardManager-${{ steps.version.outputs.version }}.dmg | cut -f1)"
+          echo "DMG: $(du -sh Maccopy-${{ steps.version.outputs.version }}.dmg | cut -f1)"
 
       - name: Copy pkg to root for upload
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: cp .build/ClipboardManager-$VERSION.pkg ClipboardManager-$VERSION.pkg
+        run: cp .build/Maccopy-$VERSION.pkg Maccopy-$VERSION.pkg
 
       - name: Create ZIP (app-only alternative)
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           cd .build/bundle
-          zip -r --symlinks "../../ClipboardManager-$VERSION.zip" ClipboardManager.app
+          zip -r --symlinks "../../Maccopy-$VERSION.zip" Maccopy.app
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Clipboard Manager v${{ steps.version.outputs.version }}"
+          name: "Maccopy v${{ steps.version.outputs.version }}"
           draft: false
           prerelease: false
           generate_release_notes: true
           files: |
-            ClipboardManager-${{ steps.version.outputs.version }}.pkg
-            ClipboardManager-${{ steps.version.outputs.version }}.dmg
-            ClipboardManager-${{ steps.version.outputs.version }}.zip
+            Maccopy-${{ steps.version.outputs.version }}.pkg
+            Maccopy-${{ steps.version.outputs.version }}.dmg
+            Maccopy-${{ steps.version.outputs.version }}.zip
