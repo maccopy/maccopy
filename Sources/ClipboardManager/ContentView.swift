@@ -495,12 +495,19 @@ struct ChangelogView: View {
     var isPostInstall: Bool = false
     @Environment(\.dismiss) private var dismiss
 
+    private var markdownBody: AttributedString {
+        (try? AttributedString(
+            markdown: release.changelog,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(release.changelog)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("What's new in v\(release.versionDisplay)")
+                    Text("Changelog — v\(release.versionDisplay)")
                         .font(.system(size: 15, weight: .semibold))
                     if let date = release.formattedDate {
                         Text("Released \(date)")
@@ -526,10 +533,10 @@ struct ChangelogView: View {
 
             // Changelog body
             ScrollView {
-                Text(release.changelog)
-                    .font(.system(size: 12, design: .monospaced))
+                Text(markdownBody)
+                    .font(.system(size: 12))
                     .foregroundStyle(.primary)
-                    .lineSpacing(4)
+                    .lineSpacing(5)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
@@ -617,7 +624,7 @@ final class ChangelogWindowController {
             backing: .buffered,
             defer: false
         )
-        w.title = "What's New"
+        w.title = "Changelog"
         w.isReleasedWhenClosed = false
         w.appearance = PreferencesManager.shared.appearanceMode.nsAppearance
         w.center()
