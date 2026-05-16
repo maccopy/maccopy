@@ -49,6 +49,7 @@ struct ClipboardRowView: View {
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
+        .contextMenu { rowContextMenu }
         .onHover { isHovered = $0 }
         .onTapGesture(count: 2, perform: onPaste)
         .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isHovered)
@@ -275,6 +276,45 @@ struct ClipboardRowView: View {
                         lineWidth: 1
                     )
             )
+    }
+
+    // MARK: - Context Menu
+
+    @ViewBuilder
+    private var rowContextMenu: some View {
+        Button {
+            onPaste()
+        } label: {
+            Label("Paste", systemImage: "arrow.up.to.line")
+        }
+
+        if entry.type == .text, let text = entry.text {
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+            } label: {
+                Label("Copy to Clipboard", systemImage: "doc.on.doc")
+            }
+        }
+
+        Divider()
+
+        Button {
+            onPin()
+        } label: {
+            Label(
+                entry.isPinned ? "Unpin" : "Pin",
+                systemImage: entry.isPinned ? "pin.slash.fill" : "pin.fill"
+            )
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            onDelete()
+        } label: {
+            Label("Delete", systemImage: "trash.fill")
+        }
     }
 
     // MARK: - Action Buttons
