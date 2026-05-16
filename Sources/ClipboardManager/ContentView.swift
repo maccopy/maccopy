@@ -146,10 +146,23 @@ struct ContentView: View {
             }
             .buttonStyle(BannerButtonStyle(tint: .accentColor))
 
-            Button("Update") {
-                updater.openReleasePage()
+            if updater.isDownloading {
+                HStack(spacing: 5) {
+                    ProgressView(value: updater.downloadProgress)
+                        .progressViewStyle(.linear)
+                        .frame(width: 60)
+                        .tint(.green)
+                    Text("\(Int(updater.downloadProgress * 100))%")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.green)
+                        .monospacedDigit()
+                }
+            } else {
+                Button("Install Update") {
+                    updater.downloadAndInstall()
+                }
+                .buttonStyle(BannerButtonStyle(tint: .green))
             }
-            .buttonStyle(BannerButtonStyle(tint: .green))
 
             Button {
                 withAnimation { updater.dismiss() }
@@ -307,32 +320,27 @@ struct ContentView: View {
     }
 
     private var keyboardHints: some View {
-        HStack(spacing: 8) {
-            hintGroup(key: "↑↓", label: "navigate")
-            hintGroup(key: "↩", label: "paste")
-            hintGroup(key: "⎋", label: "close")
+        HStack(spacing: 4) {
+            hintKey("↑↓")
+            hintKey("↩")
+            hintKey("⎋")
         }
     }
 
-    private func hintGroup(key: String, label: String) -> some View {
-        HStack(spacing: 3) {
-            Text(key)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.quaternary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.primary.opacity(0.06))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 3)
-                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                        )
-                )
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.quaternary)
-        }
+    private func hintKey(_ key: String) -> some View {
+        Text(key)
+            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+            .foregroundStyle(.quaternary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.primary.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
+                    )
+            )
     }
 
     private var countLabel: String {
@@ -545,9 +553,9 @@ struct ChangelogView: View {
                 .foregroundStyle(.secondary)
                 .font(.system(size: 12))
 
-                Button("Download Update") {
-                    UpdateChecker.shared.openReleasePage()
+                Button("Install Update") {
                     dismiss()
+                    UpdateChecker.shared.downloadAndInstall()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)

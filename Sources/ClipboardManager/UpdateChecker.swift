@@ -1,16 +1,28 @@
 import Foundation
 import AppKit
 
+struct GitHubAsset: Codable {
+    let name: String
+    let browserDownloadUrl: String
+    let size: Int
+
+    enum CodingKeys: String, CodingKey {
+        case name, size
+        case browserDownloadUrl = "browser_download_url"
+    }
+}
+
 struct GitHubRelease: Codable {
     let tagName: String
     let name: String?
     let body: String?
     let htmlUrl: String
     let publishedAt: String?
+    let assets: [GitHubAsset]
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
-        case name, body
+        case name, body, assets
         case htmlUrl = "html_url"
         case publishedAt = "published_at"
     }
@@ -48,6 +60,13 @@ final class UpdateChecker: ObservableObject {
     @Published var isChecking = false
     @Published var checkError: String?
     @Published var showChangelog = false
+    @Published var isDownloading = false
+    @Published var downloadProgress: Double = 0
+    @Published var downloadError: String?
+
+    var zipAsset: GitHubAsset? {
+        latestRelease?.assets.first { $0.name.hasSuffix(".zip") }
+    }
 
     private let defaults = UserDefaults.standard
 
@@ -90,6 +109,77 @@ final class UpdateChecker: ObservableObject {
     func dismiss() {
         dismissedVersion = latestRelease?.tagName
         updateAvailable = false
+    }
+
+    func downloadAndInstall() {
+        guard let asset = zipAsset else {
+            openReleasePage()
+            return
+        }
+        guard let downloadURL = URL(string: asset.browserDownloadUrl) else { return }
+
+        isDownloading = true
+        downloadProgress = 0
+        downloadError = nil
+
+        Task.detached(priority: .userInitiated) {
+            do {
+                let tmpDir = FileManager.default.temporaryDirectory
+                let zipDest = tmpDir.appendingPathComponent(asset.name)
+                let extractDir = tmpDir.appendingPathComponent("CMUpdate_\(UUID().uuidString)")
+
+                // Download
+                let (localURL, _) = try await URLSession.shared.download(from: downloadURL)
+                try? FileManager.default.removeItem(at: zipDest)
+                try FileManager.default.moveItem(at: localURL, to: zipDest)
+
+                await MainActor.run { self.downloadProgress = 0.5 }
+
+                // Extract
+                try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+                let unzip = Process()
+                unzip.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+                unzip.arguments = ["-q", "-o", zipDest.path, "-d", extractDir.path]
+                try unzip.run()
+                unzip.waitUntilExit()
+
+                await MainActor.run { self.downloadProgress = 0.8 }
+
+                let appSrc = extractDir.appendingPathComponent("ClipboardManager.app")
+                guard FileManager.default.fileExists(atPath: appSrc.path) else {
+                    throw NSError(domain: "UpdateChecker", code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "ClipboardManager.app not found in archive"])
+                }
+
+                let currentApp = Bundle.main.bundleURL.path
+                let script = """
+                #!/bin/bash
+                sleep 1.5
+                rm -rf '\(currentApp)'
+                cp -R '\(appSrc.path)' '\(currentApp)'
+                xattr -rd com.apple.quarantine '\(currentApp)' 2>/dev/null || true
+                open '\(currentApp)'
+                """
+                let scriptPath = tmpDir.appendingPathComponent("cm_update.sh").path
+                try script.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+                try FileManager.default.setAttributes([.posixPermissions: NSNumber(value: 0o755)], ofItemAtPath: scriptPath)
+
+                await MainActor.run { self.downloadProgress = 1.0 }
+
+                let launcher = Process()
+                launcher.executableURL = URL(fileURLWithPath: "/bin/bash")
+                launcher.arguments = [scriptPath]
+                try launcher.run()
+
+                await MainActor.run { NSApp.terminate(nil) }
+
+            } catch {
+                await MainActor.run {
+                    self.isDownloading = false
+                    self.downloadError = error.localizedDescription
+                }
+            }
+        }
     }
 
     func openReleasePage() {
