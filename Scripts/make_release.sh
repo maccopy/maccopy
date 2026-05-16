@@ -81,7 +81,7 @@ ok "Draft release created"
 echo
 echo "${BOLD}Next steps:${RESET}"
 echo "  1. git push && git push --tags"
-echo "  2. Publish the draft: github.com/FernandoHaeser/maccopy/releases"
+echo "  2. Publish the draft: github.com/maccopy/maccopy/releases"
 echo "  3. Update maccopy/homebrew-tap Casks/maccopy.rb:"
 echo "       version \"$VERSION\""
 echo "       sha256  \"$SHA256\""
