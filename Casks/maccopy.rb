@@ -1,4 +1,4 @@
-cask "clipboard-manager" do
+cask "maccopy" do
   version "1.1.1"
   sha256 "154a21008f95485a50ce3da1ece1a21eb9a11d77ceb3a2b21472d7fe1bc13296"
 
