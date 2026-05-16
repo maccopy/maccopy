@@ -252,47 +252,47 @@ function AppMockup() {
   return (
     <section className="py-8 pb-20">
       <div className="max-w-6xl mx-auto px-6 flex justify-center">
-        <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700"
-             style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(20px)" }}>
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center gap-2 text-gray-400">
+        <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 backdrop-blur-xl
+                        bg-[rgba(255,255,255,0.92)] dark:bg-[rgba(18,18,22,0.92)]">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/60">
+            <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
-              <span className="text-sm text-gray-400">Search clipboard history…</span>
+              <span className="text-sm">Search clipboard history…</span>
             </div>
           </div>
 
           <div className="py-1.5">
             {items.map((item, i) => (
               <div key={i}
-                   className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl ${i === 0 ? "border border-orange-200" : ""}`}
+                   className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl ${i === 0 ? "border border-orange-200 dark:border-orange-900/60" : ""}`}
                    style={i === 0 ? { background: "rgba(240,81,56,0.08)" } : {}}>
                 <span className="text-lg w-6 shrink-0">{item.icon}</span>
                 <div className="min-w-0">
-                  <div className="text-xs font-medium text-gray-800 truncate">{item.text}</div>
-                  <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                  <div className="text-xs font-medium text-gray-800 dark:text-gray-100 truncate">{item.text}</div>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
                     {item.pinned && <span className="text-orange-400">📌</span>}
                     {item.sub}
                   </div>
                 </div>
                 {i === 0 && (
                   <div className="ml-auto flex gap-1 shrink-0">
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-orange-100 text-orange-500">📌</span>
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-blue-50 text-blue-500">↑</span>
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-red-50 text-red-400">🗑</span>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-orange-100 dark:bg-orange-950/60 text-orange-500">📌</span>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-blue-50 dark:bg-blue-950/40 text-blue-500">↑</span>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] bg-red-50 dark:bg-red-950/40 text-red-400">🗑</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
 
-          <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[10px] text-gray-400">📋 47 items</span>
-            <div className="flex gap-3 text-[10px] text-gray-300">
-              <span className="px-1.5 py-0.5 rounded border border-gray-200 text-gray-400">↑↓</span>
-              <span className="px-1.5 py-0.5 rounded border border-gray-200 text-gray-400">↵ paste</span>
-              <span className="px-1.5 py-0.5 rounded border border-gray-200 text-gray-400">⌘K clear</span>
+          <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">📋 47 items</span>
+            <div className="flex gap-3 text-[10px]">
+              <span className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500">↑↓</span>
+              <span className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500">↵ paste</span>
+              <span className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500">⌘K clear</span>
             </div>
           </div>
         </div>
