@@ -52,8 +52,8 @@ final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
 
     static let currentVersion = "1.1.2"
-    private static let apiURL = URL(string: "https://api.github.com/repos/FernandoHaeser/macos-clipboard-manager/releases/latest")!
-    private static let releasePageURL = URL(string: "https://github.com/FernandoHaeser/macos-clipboard-manager/releases")!
+    private static let apiURL = URL(string: "https://api.github.com/repos/maccopy/maccopy/releases/latest")!
+    private static let releasePageURL = URL(string: "https://github.com/maccopy/maccopy/releases")!
 
     @Published var latestRelease: GitHubRelease?
     @Published var updateAvailable = false
