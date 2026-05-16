@@ -35,6 +35,7 @@ struct PreferencesView: View {
     @ObservedObject private var prefs = PreferencesManager.shared
     @ObservedObject private var store = ClipboardStore.shared
     @ObservedObject private var updater = UpdateChecker.shared
+    @State private var showClearConfirm = false
 
     var body: some View {
         Form {
@@ -63,10 +64,21 @@ struct PreferencesView: View {
                     Stepper("\(prefs.maxHistory)", value: $prefs.maxHistory, in: 10...1000, step: 10)
                 }
                 Button("Clear All History") {
-                    store.clear()
+                    showClearConfirm = true
                 }
                 .foregroundStyle(.red)
                 .buttonStyle(.plain)
+                .confirmationDialog(
+                    "Clear all clipboard history?",
+                    isPresented: $showClearConfirm,
+                    titleVisibility: .visible
+                ) {
+                    Button("Clear History", role: .destructive) { store.clear() }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    let unpinned = store.entries.filter { !$0.isPinned }.count
+                    Text("This will remove \(unpinned) item\(unpinned == 1 ? "" : "s"). Pinned items are kept.")
+                }
             } header: {
                 Text("History")
             }

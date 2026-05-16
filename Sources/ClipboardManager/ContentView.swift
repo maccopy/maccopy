@@ -5,6 +5,7 @@ struct ContentView: View {
     @ObservedObject private var prefs = PreferencesManager.shared
     @ObservedObject private var updater = UpdateChecker.shared
     @State private var selectedID: UUID?
+    @State private var showClearConfirm = false
     @FocusState private var searchFocused: Bool
 
     private var pinned: [ClipboardEntry] { store.filtered.filter { $0.isPinned } }
@@ -34,6 +35,17 @@ struct ContentView: View {
             .opacity(prefs.overlayOpacity)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        .confirmationDialog(
+            "Clear all clipboard history?",
+            isPresented: $showClearConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Clear History", role: .destructive) { store.clear() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            let unpinned = store.entries.filter { !$0.isPinned }.count
+            Text("This will remove \(unpinned) item\(unpinned == 1 ? "" : "s"). Pinned items are kept.")
+        }
         .onAppear {
             searchFocused = true
             selectedID = allFiltered.first?.id
@@ -252,7 +264,7 @@ struct ContentView: View {
                 }
                 footerDivider
                 footerButton("Clear", icon: "trash") {
-                    store.clear()
+                    showClearConfirm = true
                 }
             }
         }
