@@ -3,4 +3,9 @@
 .build/
 *.o
 *.d
+node_modules/
+**/node_modules/
+website/.next/
+**/.next/
+website/out/
 
