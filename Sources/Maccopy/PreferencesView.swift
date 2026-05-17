@@ -14,7 +14,7 @@ final class PreferencesWindowController {
             return
         }
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 600),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 820),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -150,6 +150,78 @@ struct PreferencesView: View {
                     }
                 }
 
+                LabeledContent("Font family") {
+                    Picker("", selection: $prefs.itemFontDesign) {
+                        ForEach(ItemFontDesign.allCases, id: \.self) { d in
+                            Text(d.displayName).tag(d)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                }
+
+                LabeledContent("Font size") {
+                    HStack(spacing: 8) {
+                        Slider(value: $prefs.itemFontSize, in: 10...18, step: 0.5)
+                            .frame(width: 120)
+                        Text(String(format: "%.1f pt", prefs.itemFontSize))
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 54, alignment: .leading)
+                    }
+                }
+
+                LabeledContent("Search bar style") {
+                    Picker("", selection: $prefs.searchBarStyle) {
+                        ForEach(SearchBarStyle.allCases, id: \.self) { s in
+                            Text(s.displayName).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                }
+
+                Toggle("Show selection stripe", isOn: $prefs.showSelectionStripe)
+
+                LabeledContent("Popover height") {
+                    HStack(spacing: 8) {
+                        Slider(value: $prefs.popoverHeight, in: 400...800, step: 20)
+                            .frame(width: 120)
+                        Text("\(Int(prefs.popoverHeight)) px")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 54, alignment: .leading)
+                    }
+                }
+
+                LabeledContent("Corner radius") {
+                    HStack(spacing: 8) {
+                        Slider(value: $prefs.popoverCornerRadius, in: 0...28, step: 2)
+                            .frame(width: 120)
+                        Text("\(Int(prefs.popoverCornerRadius)) pt")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 54, alignment: .leading)
+                    }
+                }
+
+                LabeledContent("Status bar icon") {
+                    Picker("", selection: $prefs.statusBarIconStyle) {
+                        ForEach(StatusBarIconStyle.allCases, id: \.self) { icon in
+                            if icon == .maccopy {
+                                Text("⬡ \(icon.displayName)").tag(icon)
+                            } else {
+                                HStack(spacing: 4) {
+                                    Image(systemName: icon.symbolName)
+                                    Text(icon.displayName)
+                                }.tag(icon)
+                            }
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                }
+
                 Toggle("Show type icon", isOn: $prefs.showTypeIcon)
                 Toggle("Show timestamps", isOn: $prefs.showTimestamps)
                 Toggle("Show character count", isOn: $prefs.showCharCount)
@@ -272,10 +344,16 @@ struct PreferencesView: View {
                         check: { PermissionRequester.inputMonitoringGranted },
                         label: "Input Monitoring"
                     )
-                    Button("Open Settings") {
-                        NSWorkspace.shared.open(
-                            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!
-                        )
+                    Button(PermissionRequester.inputMonitoringGranted ? "Settings" : "Request") {
+                        if PermissionRequester.inputMonitoringGranted {
+                            NSWorkspace.shared.open(
+                                URL(
+                                    string:
+                                        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+                                )!)
+                        } else {
+                            PermissionRequester.requestInputMonitoring()
+                        }
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -296,7 +374,7 @@ struct PreferencesView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 600)
+        .frame(width: 520, height: 820)
         .tint(prefs.accentColorTheme.color)
         .sheet(isPresented: $updater.showChangelog) {
             if let release = updater.latestRelease {

@@ -63,12 +63,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = statusItem.button else { return }
-        let img = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "Maccopy")
-        img?.isTemplate = true
-        button.image = img
+        updateStatusBarIcon()
         button.action = #selector(handleStatusClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.target = self
+    }
+
+    func updateStatusBarIcon() {
+        guard let button = statusItem.button else { return }
+        let style = PreferencesManager.shared.statusBarIconStyle
+        if style == .maccopy {
+            button.image = makeMaccopyStatusIcon()
+        } else {
+            let img = NSImage(systemSymbolName: style.symbolName, accessibilityDescription: "Maccopy")
+            img?.isTemplate = true
+            button.image = img
+        }
+        // Force white icon regardless of system theme
+        button.appearance = NSAppearance(named: .darkAqua)
+    }
+
+    private func makeMaccopyStatusIcon() -> NSImage {
+        // Shape bounding box in SVG 100×100 viewBox:
+        //   x: 27–67 (w=40), y top-down: 15–66 (h=51)
+        // Scale to fill ~14px within 18px, constrained by height (taller than wide).
+        // s=0.215 gives h=51*0.215≈11px; ox/oy center the shape.
+        let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
+            let s: CGFloat = 0.215
+            let ox: CGFloat = -1.1  // horizontal centering offset
+            let oy: CGFloat = -2.0  // vertical centering offset
+            let flip: CGFloat = 100
+
+            // Back page (semi-transparent)
+            let backPage = NSBezierPath(
+                roundedRect: NSRect(
+                    x: ox + 35 * s, y: oy + (flip - 40 - 40) * s,
+                    width: 32 * s, height: 40 * s),
+                xRadius: 5 * s, yRadius: 5 * s)
+            NSColor.white.withAlphaComponent(0.5).set()
+            backPage.fill()
+
+            // Front page
+            let frontPage = NSBezierPath(
+                roundedRect: NSRect(
+                    x: ox + 27 * s, y: oy + (flip - 34 - 40) * s,
+                    width: 32 * s, height: 40 * s),
+                xRadius: 5 * s, yRadius: 5 * s)
+            NSColor.white.set()
+            frontPage.fill()
+
+            // Leaf / tab at top of front page
+            let leaf = NSBezierPath()
+            leaf.move(to: NSPoint(x: ox + 43 * s, y: oy + (flip - 34) * s))
+            leaf.curve(
+                to: NSPoint(x: ox + 53 * s, y: oy + (flip - 15) * s),
+                controlPoint1: NSPoint(x: ox + 43 * s, y: oy + (flip - 26) * s),
+                controlPoint2: NSPoint(x: ox + 47 * s, y: oy + (flip - 18) * s))
+            leaf.curve(
+                to: NSPoint(x: ox + 43 * s, y: oy + (flip - 34) * s),
+                controlPoint1: NSPoint(x: ox + 54 * s, y: oy + (flip - 22) * s),
+                controlPoint2: NSPoint(x: ox + 51 * s, y: oy + (flip - 29) * s))
+            leaf.close()
+            NSColor.white.set()
+            leaf.fill()
+
+            return true
+        }
+        img.isTemplate = false
+        return img
     }
 
     @objc private func handleStatusClick(_ sender: NSStatusBarButton) {

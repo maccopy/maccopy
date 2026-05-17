@@ -11,10 +11,10 @@ final class PopoverController {
 
         let prefs = PreferencesManager.shared
         let hostingVC = NSHostingController(rootView: ContentView())
-        hostingVC.view.frame = NSRect(x: 0, y: 0, width: prefs.popoverWidth, height: 540)
+        hostingVC.view.frame = NSRect(x: 0, y: 0, width: prefs.popoverWidth, height: prefs.popoverHeight)
 
         popover.contentViewController = hostingVC
-        popover.contentSize = NSSize(width: prefs.popoverWidth, height: 540)
+        popover.contentSize = NSSize(width: prefs.popoverWidth, height: prefs.popoverHeight)
         popover.behavior = .applicationDefined
         popover.animates = true
     }
@@ -26,7 +26,7 @@ final class PopoverController {
 
         // Sync size in case preference changed since last open
         let prefs = PreferencesManager.shared
-        popover.contentSize = NSSize(width: prefs.popoverWidth, height: 540)
+        popover.contentSize = NSSize(width: prefs.popoverWidth, height: prefs.popoverHeight)
 
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
 
@@ -48,14 +48,16 @@ final class PopoverController {
         guard let window = popover.contentViewController?.view.window else { return }
         window.isOpaque = false
         window.backgroundColor = .clear
+        // Match window appearance to the user's preference so NSScrollView scroll
+        // indicators (and other AppKit widgets) use the correct light/dark rendering.
+        window.appearance = PreferencesManager.shared.appearanceMode.nsAppearance
 
         // Disable the popover's own visual effect view so SwiftUI .background(...)
         // (regularMaterial or solid color) has sole control over the appearance.
         if let effectView = window.contentView?.subviews
             .first(where: { $0 is NSVisualEffectView }) as? NSVisualEffectView
         {
-            effectView.state = .inactive
-            effectView.blendingMode = .withinWindow
+            effectView.isHidden = true
         }
     }
 

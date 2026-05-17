@@ -19,7 +19,8 @@ struct ClipboardRowView: View {
         return fmt.localizedString(for: entry.date, relativeTo: Date())
     }
 
-    private var fontSize: CGFloat { prefs.rowDensity.primaryFontSize }
+    private var fontSize: CGFloat { prefs.itemFontSize }
+    private var fontDesign: Font.Design { prefs.itemFontDesign.fontDesign }
     private var vPad: CGFloat { prefs.rowDensity.verticalPadding }
 
     var body: some View {
@@ -48,6 +49,15 @@ struct ClipboardRowView: View {
         .padding(.horizontal, 10)
         .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(alignment: .leading) {
+            if isSelected && prefs.showSelectionStripe {
+                Capsule()
+                    .fill(prefs.accentColorTheme.color)
+                    .frame(width: 3, height: 22)
+                    .padding(.leading, 1)
+                    .transition(.opacity.combined(with: .scale(scale: 0.5, anchor: .leading)))
+            }
+        }
         .contentShape(Rectangle())
         .contextMenu { rowContextMenu }
         .onHover { isHovered = $0 }
@@ -191,7 +201,7 @@ struct ClipboardRowView: View {
                     ?? entry.linkPreview?.domain
                     ?? entry.text ?? ""
                 Text(display)
-                    .font(.system(size: fontSize))
+                    .font(.system(size: fontSize, design: fontDesign))
                     .lineLimit(1)
                     .foregroundStyle(.primary)
             } else {
@@ -203,19 +213,19 @@ struct ClipboardRowView: View {
                 let limit = prefs.rowDensity == .compact ? 80 : 150
                 let preview = raw.count > limit ? String(raw.prefix(limit)) + "…" : raw
                 Text(preview)
-                    .font(.system(size: fontSize))
+                    .font(.system(size: fontSize, design: fontDesign))
                     .lineLimit(prefs.rowDensity == .compact ? 1 : 2)
                     .foregroundStyle(.primary)
             }
 
         case .image:
             Text("Image")
-                .font(.system(size: fontSize))
+                .font(.system(size: fontSize, design: fontDesign))
                 .foregroundStyle(.secondary)
 
         case .file:
             Text(entry.fileName ?? "File")
-                .font(.system(size: fontSize))
+                .font(.system(size: fontSize, design: fontDesign))
                 .lineLimit(1)
                 .foregroundStyle(.primary)
         }
@@ -261,17 +271,18 @@ struct ClipboardRowView: View {
     // MARK: - Row Background
 
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 10)
+        let accent = prefs.accentColorTheme.color
+        return RoundedRectangle(cornerRadius: 10)
             .fill(
                 isSelected
-                    ? Color.accentColor.opacity(0.15)
+                    ? accent.opacity(0.15)
                     : isHovered ? Color.primary.opacity(0.06) : Color.clear
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(
                         isSelected
-                            ? Color.accentColor.opacity(0.4)
+                            ? accent.opacity(0.4)
                             : isHovered ? Color.primary.opacity(0.06) : Color.clear,
                         lineWidth: 1
                     )

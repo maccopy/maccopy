@@ -37,11 +37,10 @@ struct KeyCombo: Codable, Equatable {
 }
 
 enum AppearanceMode: String, Codable, CaseIterable {
-    case system, light, dark
+    case light, dark
 
     var displayName: String {
         switch self {
-        case .system: return "System"
         case .light: return "Light"
         case .dark: return "Dark"
         }
@@ -49,9 +48,75 @@ enum AppearanceMode: String, Codable, CaseIterable {
 
     var nsAppearance: NSAppearance? {
         switch self {
-        case .system: return nil
         case .light: return NSAppearance(named: .aqua)
         case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
+enum ItemFontDesign: String, Codable, CaseIterable {
+    case `default`, monospaced, rounded, serif
+
+    var displayName: String {
+        switch self {
+        case .default: return "System"
+        case .monospaced: return "Monospaced"
+        case .rounded: return "Rounded"
+        case .serif: return "Serif"
+        }
+    }
+
+    var fontDesign: Font.Design {
+        switch self {
+        case .default: return .default
+        case .monospaced: return .monospaced
+        case .rounded: return .rounded
+        case .serif: return .serif
+        }
+    }
+}
+
+enum StatusBarIconStyle: String, Codable, CaseIterable {
+    case maccopy, clipboard, doc, paste, scissors, terminal
+
+    var displayName: String {
+        switch self {
+        case .maccopy: return "Maccopy"
+        case .clipboard: return "Clipboard"
+        case .doc: return "Document"
+        case .paste: return "Paste"
+        case .scissors: return "Scissors"
+        case .terminal: return "Terminal"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .maccopy: return "doc.on.clipboard.fill"
+        case .clipboard: return "doc.on.clipboard.fill"
+        case .doc: return "doc.fill"
+        case .paste: return "clipboard.fill"
+        case .scissors: return "scissors"
+        case .terminal: return "terminal.fill"
+        }
+    }
+}
+
+enum SearchBarStyle: String, Codable, CaseIterable {
+    case minimal, subtle, accentFill
+
+    var displayName: String {
+        switch self {
+        case .minimal: return "Minimal"
+        case .subtle: return "Subtle"
+        case .accentFill: return "Accent Fill"
         }
     }
 }
@@ -149,6 +214,15 @@ final class PreferencesManager: ObservableObject {
     @Published var useGlassEffect: Bool { didSet { save() } }
     @Published var overlayOpacity: Double { didSet { save() } }
     @Published var accentColorTheme: AccentColorTheme { didSet { save() } }
+    @Published var itemFontDesign: ItemFontDesign { didSet { save() } }
+    @Published var itemFontSize: Double { didSet { save() } }
+    @Published var showSelectionStripe: Bool { didSet { save() } }
+    @Published var popoverHeight: Double { didSet { save() } }
+    @Published var popoverCornerRadius: Double { didSet { save() } }
+    @Published var statusBarIconStyle: StatusBarIconStyle {
+        didSet { applyStatusBarIcon(); save() }
+    }
+    @Published var searchBarStyle: SearchBarStyle { didSet { save() } }
 
     // Updates
     @Published var autoCheckUpdates: Bool { didSet { save() } }
@@ -173,7 +247,7 @@ final class PreferencesManager: ObservableObject {
         {
             appearanceMode = mode
         } else {
-            appearanceMode = .system
+            appearanceMode = .dark
         }
         if let raw = defaults.string(forKey: "rowDensity"),
             let density = RowDensity(rawValue: raw)
@@ -200,6 +274,39 @@ final class PreferencesManager: ObservableObject {
             accentColorTheme = .blue
         }
 
+        if let raw = defaults.string(forKey: "itemFontDesign"),
+            let design = ItemFontDesign(rawValue: raw)
+        {
+            itemFontDesign = design
+        } else {
+            itemFontDesign = .default
+        }
+        let fSize = defaults.double(forKey: "itemFontSize")
+        itemFontSize = fSize > 0 ? fSize : 12
+
+        showSelectionStripe = defaults.object(forKey: "showSelectionStripe") as? Bool ?? true
+
+        let pHeight = defaults.double(forKey: "popoverHeight")
+        popoverHeight = pHeight > 0 ? pHeight : 540
+        let pRadius = defaults.double(forKey: "popoverCornerRadius")
+        popoverCornerRadius = pRadius > 0 ? pRadius : 14
+
+        if let raw = defaults.string(forKey: "statusBarIconStyle"),
+            let icon = StatusBarIconStyle(rawValue: raw)
+        {
+            statusBarIconStyle = icon
+        } else {
+            statusBarIconStyle = .maccopy
+        }
+
+        if let raw = defaults.string(forKey: "searchBarStyle"),
+            let style = SearchBarStyle(rawValue: raw)
+        {
+            searchBarStyle = style
+        } else {
+            searchBarStyle = .minimal
+        }
+
         // Updates
         autoCheckUpdates = defaults.object(forKey: "autoCheckUpdates") as? Bool ?? true
     }
@@ -221,6 +328,13 @@ final class PreferencesManager: ObservableObject {
         defaults.set(useGlassEffect, forKey: "useGlassEffect")
         defaults.set(overlayOpacity, forKey: "overlayOpacity")
         defaults.set(accentColorTheme.rawValue, forKey: "accentColorTheme")
+        defaults.set(itemFontDesign.rawValue, forKey: "itemFontDesign")
+        defaults.set(itemFontSize, forKey: "itemFontSize")
+        defaults.set(showSelectionStripe, forKey: "showSelectionStripe")
+        defaults.set(popoverHeight, forKey: "popoverHeight")
+        defaults.set(popoverCornerRadius, forKey: "popoverCornerRadius")
+        defaults.set(statusBarIconStyle.rawValue, forKey: "statusBarIconStyle")
+        defaults.set(searchBarStyle.rawValue, forKey: "searchBarStyle")
         defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates")
     }
 
@@ -229,6 +343,10 @@ final class PreferencesManager: ObservableObject {
         for window in NSApp.windows {
             window.appearance = appearanceMode.nsAppearance
         }
+    }
+
+    func applyStatusBarIcon() {
+        AppDelegate.shared?.updateStatusBarIcon()
     }
 
     private func applyLaunchAtLogin() {

@@ -35,7 +35,7 @@ struct ContentView: View {
             Divider().opacity(0.3)
             footer
         }
-        .frame(width: prefs.popoverWidth, height: 540)
+        .frame(width: prefs.popoverWidth, height: prefs.popoverHeight)
         .background(
             Group {
                 if prefs.useGlassEffect {
@@ -46,7 +46,7 @@ struct ContentView: View {
             }
             .opacity(prefs.overlayOpacity)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: prefs.popoverCornerRadius))
         .overlay { cmdNumberShortcuts }
         .confirmationDialog(
             "Clear all clipboard history?",
@@ -74,6 +74,7 @@ struct ContentView: View {
             }
         }
         .tint(prefs.accentColorTheme.color)
+        .preferredColorScheme(prefs.appearanceMode.colorScheme)
     }
 
     // MARK: - Search Bar
@@ -81,7 +82,7 @@ struct ContentView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(searchFocused ? Color.accentColor.opacity(0.8) : Color.secondary.opacity(0.5))
+                .foregroundStyle(searchFocused ? Color.accentColor.opacity(0.85) : Color.secondary.opacity(0.5))
                 .font(.system(size: 14, weight: .medium))
                 .animation(.easeInOut(duration: 0.15), value: searchFocused)
 
@@ -122,7 +123,31 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        .padding(.vertical, 11)
+        .background(searchBarBackground)
+        .animation(.easeInOut(duration: 0.15), value: searchFocused)
+    }
+
+    @ViewBuilder
+    private var searchBarBackground: some View {
+        switch prefs.searchBarStyle {
+        case .minimal:
+            Color.clear
+        case .subtle:
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.primary.opacity(searchFocused ? 0.06 : 0.04))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+        case .accentFill:
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.accentColor.opacity(searchFocused ? 0.1 : 0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color.accentColor.opacity(searchFocused ? 0.35 : 0), lineWidth: 1)
+                )
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+        }
     }
 
     // MARK: - Update Banner
