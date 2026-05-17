@@ -51,7 +51,7 @@ struct GitHubRelease: Codable {
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
 
-    static let currentVersion = "1.1.2"
+    static let currentVersion = "1.2.0"
     private static let apiURL = URL(string: "https://api.github.com/repos/maccopy/maccopy/releases/latest")!
     private static let releasePageURL = URL(string: "https://github.com/maccopy/maccopy/releases")!
 
